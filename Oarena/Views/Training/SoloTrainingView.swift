@@ -10,16 +10,22 @@ import SwiftUI
 struct SoloTrainingView: View {
     @ObservedObject private var userData = UserData.shared
     @State private var distance = ""
-    @State private var time = ""
+    @State private var timeMinutes = ""
+    @State private var timeSeconds = ""
     @State private var intervalDistance = ""
-    @State private var intervalTime = ""
-    @State private var intervalRest = ""
+    @State private var intervalTimeMinutes = ""
+    @State private var intervalTimeSeconds = ""
+    @State private var intervalRestMinutes = ""
+    @State private var intervalRestSeconds = ""
     @State private var intervalCount = ""
     @State private var isPM5Connected = false
     @State private var showingWorkoutHistory = false
     @State private var showingTicketStore = false
+    @State private var selectedWorkout: WorkoutData?
+    @State private var showingWorkoutDetail = false
     
     let workoutTypes = ["Just Row", "Single Distance", "Single Time", "Intervals: Distance", "Intervals: Time"]
+    let recentWorkouts = Array(WorkoutData.sampleWorkouts.prefix(3)) // Show first 3 workouts
     
     var body: some View {
         NavigationView {
@@ -111,14 +117,37 @@ struct SoloTrainingView: View {
                                 }
                             } else if userData.selectedWorkoutType == 2 { // Single Time
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("Time (minutes)")
+                                    Text("Duration")
                                         .font(.subheadline)
                                         .fontWeight(.medium)
                                         .foregroundColor(.oarenaSecondary)
                                     
-                                    TextField("e.g., 20", text: $time)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .keyboardType(.numberPad)
+                                    HStack(spacing: 8) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Minutes")
+                                                .font(.caption)
+                                                .foregroundColor(.oarenaSecondary)
+                                            TextField("20", text: $timeMinutes)
+                                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                .keyboardType(.numberPad)
+                                        }
+                                        
+                                        Text(":")
+                                            .font(.title2)
+                                            .foregroundColor(.oarenaSecondary)
+                                            .padding(.top, 20)
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Seconds")
+                                                .font(.caption)
+                                                .foregroundColor(.oarenaSecondary)
+                                            TextField("00", text: $timeSeconds)
+                                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                .keyboardType(.numberPad)
+                                        }
+                                        
+                                        Spacer()
+                                    }
                                 }
                             } else if userData.selectedWorkoutType == 3 { // Intervals: Distance
                                 VStack(alignment: .leading, spacing: 12) {
@@ -127,21 +156,13 @@ struct SoloTrainingView: View {
                                         .fontWeight(.medium)
                                         .foregroundColor(.oarenaSecondary)
                                     
+                                    // Distance and Sets row
                                     HStack(spacing: 12) {
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text("Distance (m)")
                                                 .font(.caption)
                                                 .foregroundColor(.oarenaSecondary)
                                             TextField("500", text: $intervalDistance)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .keyboardType(.numberPad)
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Rest (min)")
-                                                .font(.caption)
-                                                .foregroundColor(.oarenaSecondary)
-                                            TextField("2", text: $intervalRest)
                                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                                 .keyboardType(.numberPad)
                                         }
@@ -155,6 +176,40 @@ struct SoloTrainingView: View {
                                                 .keyboardType(.numberPad)
                                         }
                                     }
+                                    
+                                    // Rest time row with minutes and seconds
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Rest Time")
+                                            .font(.caption)
+                                            .foregroundColor(.oarenaSecondary)
+                                        
+                                        HStack(spacing: 8) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Min")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("2", text: $intervalRestMinutes)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Text(":")
+                                                .font(.headline)
+                                                .foregroundColor(.oarenaSecondary)
+                                                .padding(.top, 16)
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Sec")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("30", text: $intervalRestSeconds)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                    }
                                 }
                             } else if userData.selectedWorkoutType == 4 { // Intervals: Time
                                 VStack(alignment: .leading, spacing: 12) {
@@ -163,25 +218,8 @@ struct SoloTrainingView: View {
                                         .fontWeight(.medium)
                                         .foregroundColor(.oarenaSecondary)
                                     
+                                    // Sets
                                     HStack(spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Time (min)")
-                                                .font(.caption)
-                                                .foregroundColor(.oarenaSecondary)
-                                            TextField("4", text: $intervalTime)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .keyboardType(.numberPad)
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 6) {
-                                            Text("Rest (min)")
-                                                .font(.caption)
-                                                .foregroundColor(.oarenaSecondary)
-                                            TextField("2", text: $intervalRest)
-                                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                .keyboardType(.numberPad)
-                                        }
-                                        
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text("Sets")
                                                 .font(.caption)
@@ -189,6 +227,75 @@ struct SoloTrainingView: View {
                                             TextField("5", text: $intervalCount)
                                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                                 .keyboardType(.numberPad)
+                                        }
+                                        Spacer()
+                                    }
+                                    
+                                    // Interval duration with minutes and seconds
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Interval Duration")
+                                            .font(.caption)
+                                            .foregroundColor(.oarenaSecondary)
+                                        
+                                        HStack(spacing: 8) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Min")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("4", text: $intervalTimeMinutes)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Text(":")
+                                                .font(.headline)
+                                                .foregroundColor(.oarenaSecondary)
+                                                .padding(.top, 16)
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Sec")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("00", text: $intervalTimeSeconds)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Spacer()
+                                        }
+                                    }
+                                    
+                                    // Rest time with minutes and seconds
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Rest Time")
+                                            .font(.caption)
+                                            .foregroundColor(.oarenaSecondary)
+                                        
+                                        HStack(spacing: 8) {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Min")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("2", text: $intervalRestMinutes)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Text(":")
+                                                .font(.headline)
+                                                .foregroundColor(.oarenaSecondary)
+                                                .padding(.top, 16)
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text("Sec")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.oarenaSecondary)
+                                                TextField("30", text: $intervalRestSeconds)
+                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                                    .keyboardType(.numberPad)
+                                            }
+                                            
+                                            Spacer()
                                         }
                                     }
                                 }
@@ -264,9 +371,13 @@ struct SoloTrainingView: View {
                                 .foregroundColor(.oarenaAccent)
                             }
                             
-                            LazyVStack(spacing: 8) {
-                                ForEach(0..<3) { index in
-                                    WorkoutPreviewRow()
+                            LazyVStack(spacing: 12) {
+                                ForEach(recentWorkouts) { workout in
+                                    WorkoutPreviewRow(workout: workout)
+                                        .onTapGesture {
+                                            selectedWorkout = workout
+                                            showingWorkoutDetail = true
+                                        }
                                 }
                             }
                         }
@@ -306,6 +417,23 @@ struct SoloTrainingView: View {
         }
         .sheet(isPresented: $showingTicketStore) {
             TicketStoreView()
+        }
+        .sheet(isPresented: $showingWorkoutDetail) {
+            if let workout = selectedWorkout {
+                WorkoutSummaryView(
+                    workoutType: workout.workoutType,
+                    date: workout.date,
+                    totalTime: workout.totalTime,
+                    distance: workout.distance,
+                    avgPace: workout.avgPace,
+                    avgPower: workout.avgPower,
+                    avgSPM: workout.avgSPM,
+                    maxHeartRate: workout.maxHeartRate,
+                    calories: workout.calories,
+                    ticketsEarned: workout.ticketsEarned,
+                    rankPointsGained: workout.rankPointsGained
+                )
+            }
         }
     }
 }
@@ -349,41 +477,55 @@ struct PM5ConnectionStatusCard: View {
 }
 
 struct WorkoutPreviewRow: View {
+    let workout: WorkoutData
+    
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("5000m Row")
+                Text(workout.workoutType)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.oarenaPrimary)
                 
-                Text("20:15 • 1:45/500m avg")
+                Text(workout.summary)
                     .font(.caption)
                     .foregroundColor(.oarenaSecondary)
                 
-                Text("Yesterday")
-                    .font(.caption)
-                    .foregroundColor(.oarenaSecondary)
+                HStack {
+                    Text(workout.timeAgo)
+                        .font(.caption)
+                        .foregroundColor(.oarenaSecondary)
+                    
+                    Text("•")
+                        .font(.caption)
+                        .foregroundColor(.oarenaSecondary)
+                    
+                    Text("Tap to view")
+                        .font(.caption)
+                        .foregroundColor(.oarenaAccent)
+                        .italic()
+                }
             }
             
             Spacer()
             
-            VStack(alignment: .trailing) {
+            VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: "ticket.fill")
                         .foregroundColor(.oarenaAction)
                         .font(.caption)
-                    Text("15")
+                    Text("\(workout.ticketsEarned)")
                         .font(.caption)
                         .foregroundColor(.oarenaSecondary)
                 }
                 
-                Text("Tickets Earned")
+                Text("Tickets")
                     .font(.caption2)
                     .foregroundColor(.oarenaSecondary)
             }
         }
         .padding(.vertical, 8)
+        .contentShape(Rectangle()) // Makes entire card tappable
     }
 }
 

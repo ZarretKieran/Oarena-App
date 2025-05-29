@@ -13,10 +13,60 @@ struct HomeView: View {
     @State private var showingWorkoutHistory = false
     @State private var showingTicketStore = false
     @State private var showingRaceDetail = false
-    @State private var selectedWorkout: WorkoutData?
     @State private var showingWorkoutDetail = false
+    @State private var selectedWorkout: WorkoutData?
+    @State private var selectedRace: RaceData?
     
-    let recentWorkouts = Array(WorkoutData.sampleWorkouts.prefix(4)) // Show first 4 workouts
+    // Sample recent workouts data
+    private let recentWorkouts: [WorkoutData] = [
+        WorkoutData(
+            workoutType: "2000m Row",
+            date: "Yesterday, 2:30 PM",
+            totalTime: "7:32.0",
+            distance: "2000m",
+            avgPace: "1:53.0",
+            avgPower: "285W",
+            avgSPM: "32",
+            maxHeartRate: "185 bpm",
+            calories: "312",
+            ticketsEarned: 8,
+            rankPointsGained: 12,
+            timeAgo: "Yesterday"
+        ),
+        WorkoutData(
+            workoutType: "5000m Steady State",
+            date: "2 days ago, 7:00 AM",
+            totalTime: "21:25.0",
+            distance: "5000m",
+            avgPace: "2:08.5",
+            avgPower: "195W",
+            avgSPM: "24",
+            maxHeartRate: "165 bpm",
+            calories: "485",
+            ticketsEarned: 15,
+            rankPointsGained: 18,
+            timeAgo: "2 days ago"
+        ),
+        WorkoutData(
+            workoutType: "20 Min Time Trial",
+            date: "4 days ago, 6:15 PM",
+            totalTime: "20:00.0",
+            distance: "4850m",
+            avgPace: "2:04.0",
+            avgPower: "220W",
+            avgSPM: "28",
+            maxHeartRate: "178 bpm",
+            calories: "420",
+            ticketsEarned: 12,
+            rankPointsGained: 15,
+            timeAgo: "4 days ago"
+        )
+    ]
+    
+    // Get all featured races for home preview - should match Race tab
+    private var previewRaces: [RaceData] {
+        RaceData.sampleFeaturedRaces
+    }
     
     var body: some View {
         NavigationView {
@@ -127,19 +177,23 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Upcoming Races Card
+                    // Featured Races Section
                     CardView {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Upcoming Races")
+                            Text("Featured Races")
                                 .font(.headline)
                                 .foregroundColor(.oarenaPrimary)
                             
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
-                                    ForEach(0..<3) { index in
-                                        RacePreviewCard()
+                                    ForEach(previewRaces) { race in
+                                        RacePreviewCard(race: race)
                                             .onTapGesture {
-                                                showingRaceDetail = true
+                                                // Only allow tapping if user hasn't joined the race
+                                                if !userData.hasJoinedRace(race.id) {
+                                                    selectedRace = race
+                                                    showingRaceDetail = true
+                                                }
                                             }
                                     }
                                 }
@@ -214,7 +268,9 @@ struct HomeView: View {
             TicketStoreView()
         }
         .sheet(isPresented: $showingRaceDetail) {
-            RaceDetailView()
+            if let race = selectedRace {
+                RaceDetailView(race: race)
+            }
         }
         .sheet(isPresented: $showingWorkoutDetail) {
             if let workout = selectedWorkout {
@@ -241,16 +297,6 @@ struct WorkoutCard: View {
     
     var body: some View {
         HStack {
-            // Workout icon
-            Circle()
-                .fill(Color.oarenaAccent.opacity(0.2))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: "figure.rowing")
-                        .foregroundColor(.oarenaAccent)
-                        .font(.caption)
-                )
-            
             VStack(alignment: .leading, spacing: 4) {
                 Text(workout.workoutType)
                     .font(.subheadline)
@@ -261,9 +307,20 @@ struct WorkoutCard: View {
                     .font(.caption)
                     .foregroundColor(.oarenaSecondary)
                 
-                Text(workout.timeAgo)
-                    .font(.caption)
-                    .foregroundColor(.oarenaSecondary)
+                HStack {
+                    Text(workout.timeAgo)
+                        .font(.caption)
+                        .foregroundColor(.oarenaSecondary)
+                    
+                    Text("•")
+                        .font(.caption)
+                        .foregroundColor(.oarenaSecondary)
+                    
+                    Text("Tap to view")
+                        .font(.caption)
+                        .foregroundColor(.oarenaAccent)
+                        .italic()
+                }
             }
             
             Spacer()
@@ -289,38 +346,113 @@ struct WorkoutCard: View {
 }
 
 struct RacePreviewCard: View {
+    let race: RaceData
+    @ObservedObject private var userData = UserData.shared
+    
+    private var hasJoined: Bool {
+        userData.hasJoinedRace(race.id)
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("2k Sprint Challenge")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.oarenaPrimary)
-            
-            Text("Live Race")
-                .font(.caption)
-                .foregroundColor(.oarenaHighlight)
-            
-            Text("Starts in 2h 15m")
-                .font(.caption)
-                .foregroundColor(.oarenaSecondary)
-            
-            HStack {
-                Image(systemName: "ticket.fill")
-                    .foregroundColor(.oarenaAction)
-                    .font(.caption)
-                Text("25 Tickets")
-                    .font(.caption)
-                    .foregroundColor(.oarenaSecondary)
+        CardView(backgroundColor: hasJoined ? Color.oarenaAccent.opacity(0.15) : Color.oarenaAccent.opacity(0.05)) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Header with title and joined badge
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(race.title)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.oarenaPrimary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("\(race.raceType) • \(race.format)")
+                            .font(.caption)
+                            .foregroundColor(.oarenaHighlight)
+                    }
+                    
+                    Spacer()
+                    
+                    if hasJoined {
+                        Text("JOINED")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.oarenaAccent)
+                            .cornerRadius(4)
+                    }
+                }
+                
+                // Workout type
+                Text(race.workoutType)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.oarenaAccent)
+                
+                // Enhanced timing display
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(race.timingLabel)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(race.raceType == "Live Race" ? .oarenaHighlight : .oarenaAccent)
+                    
+                    Text(race.timingDisplayText)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.oarenaPrimary)
+                    
+                    Text(race.countdownDisplayText)
+                        .font(.caption2)
+                        .foregroundColor(.oarenaSecondary)
+                }
+                
+                // Race info row
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(race.rankDisplayText)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color(race.rankColor))
+                        
+                        Text(race.participants)
+                            .font(.caption2)
+                            .foregroundColor(.oarenaSecondary)
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Bottom row with entry fee and status
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "ticket.fill")
+                            .foregroundColor(.oarenaAction)
+                            .font(.caption)
+                        Text("\(race.entryFee)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.oarenaPrimary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(race.statusText)
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(race.status == .upcoming ? Color.oarenaAccent : 
+                                  race.status == .live ? Color.oarenaHighlight : Color.oarenaSecondary)
+                        .cornerRadius(4)
+                }
             }
         }
-        .padding(12)
-        .frame(width: 140)
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.oarenaAccent.opacity(0.3), lineWidth: 1)
-        )
+        .frame(width: 180, height: 220)
+        .contentShape(Rectangle()) // Makes entire card tappable
+        .opacity(hasJoined ? 0.8 : 1.0)
     }
 }
 

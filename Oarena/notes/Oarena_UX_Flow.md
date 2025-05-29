@@ -103,11 +103,22 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   Buttons: "Start Solo Row" (-> Train Tab, pre-fills "Just Row"), "Find a Race" (-> Race Tab).
     *   **UI:** Large, inviting Buttons with icons.
 
-3.  **Upcoming Races/Events Card (Dynamic):**
-    *   Horizontally scrollable list of registered or featured/popular races.
-    *   Per race: Name, Type (Live/Async), Start Time/Window, Entry Fee.
-    *   Tap navigates to `RaceDetailView` (within Race Tab context).
-    *   **UI:** ScrollView, Card views, Text, Icons.
+3.  **Featured Races Card (Dynamic):**
+    *   **Implementation:** Horizontally scrollable list of featured races from Race tab for consistency.
+    *   **Enhanced Timing Display:** Each race card shows three-line timing format:
+        *   Timing label (color-coded: Live races use highlight color, Async races use accent color)
+        *   Specific timing text (e.g., "Today 8:00 PM" or "Sunday 11:59 PM")
+        *   Countdown display (e.g., "Starts in 3 hours" or "2 days remaining")
+    *   **Rank Requirements:** Clear display of required rank with color-coded text matching rank tiers
+    *   **Race Details:** Name, Type (Live/Async), Entry Fee, Difficulty level
+    *   **Joined Race Indicators (NEW v1.7):** 
+        *   Compact "JOINED" badge displayed on race preview cards for races user has already joined
+        *   Visual distinction with muted background opacity (0.8) and enhanced background color
+        *   Disabled tap interaction for joined races (prevents duplicate race detail views)
+        *   Consistent joined race state synchronization with Race tab for seamless user experience
+    *   **Tap Behavior:** Opens detailed `RaceDetailView` with comprehensive race information (only for non-joined races)
+    *   **Data Consistency:** Uses exact same race objects as Race tab to ensure identical details
+    *   **UI:** `ScrollView` with `RacePreviewCard` components, enhanced timing displays, rank indicators, joined badges.
 
 4.  **Recent Workouts Card (Enhanced):**
     *   **Implementation:** Displays 4 most recent solo workouts as individual tappable cards.
@@ -211,19 +222,59 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 **Sub-sections Implementation:**
 
 **1. Featured Races View (`FeaturedRacesView`):**
-*   Curated list of 5 featured race cards in vertical scroll
-*   **UI:** `ScrollView` with `LazyVStack` of `FeaturedRaceCard` components
+*   **Implementation:** Curated list of 5 featured race cards in vertical scroll
+*   **Enhanced Race Cards:** Each card includes:
+    *   Color-coded timing display (three-line format with countdown)
+    *   Prominent rank requirement with color-coded rank text
+    *   Entry fee display with ticket icons
+    *   Difficulty badges and race type indicators
+*   **Joined Race Indicators (NEW v1.7):** 
+    *   "JOINED" badge displayed on races user has already joined
+    *   Visual distinction with muted background opacity (0.8) and darker background color
+    *   Disabled tap interaction for joined races (prevents duplicate race detail views)
+    *   Muted tap instruction text color to indicate limited interaction
+*   **UI:** `ScrollView` with `LazyVStack` of enhanced `FeaturedRaceCard` components
 
 **2. All Races View (`AllRacesView`):**
-*   **Search Bar:** Text field with magnifying glass icon
-*   **Filter Button:** Slider icon button opening `RaceFiltersView` sheet
-*   **Race List:** 10 race cards in vertical scroll
-*   **UI:** `HStack` with search/filter, `ScrollView` with `LazyVStack` of `RaceListCard` components
+*   **Enhanced Search Functionality (v1.9):** 
+    *   Expanded search scope to include race titles, workout types, descriptions, AND race creators
+    *   Real-time filtering with immediate results as user types for comprehensive race discovery
+    *   Search bar with magnifying glass icon maintains existing UI while expanding functionality
+*   **Advanced Filter System (v1.9):** 
+    *   Filter button with slider icon opens comprehensive `RaceFiltersView` sheet
+    *   **Active Filter Indicator:** Red dot appears on filter button when any filters are applied
+    *   **7-Category Filter System:**
+        1. **Race Type**: Filter by "Live Race", "Async Race", or "All"
+        2. **Format**: Filter by "Duel", "Regatta", "Tournament", or "All" 
+        3. **Status**: Filter by "Upcoming", "In Action", "Completed", or "All"
+        4. **Rank Requirement**: Filter by specific rank tiers or "Open to All" races
+        5. **Entry Fee Range**: Custom dual-thumb slider (0-200 tickets, 5-ticket increments)
+        6. **Availability**: Toggle to show only joinable races (excludes already joined)
+        7. **Sorting**: 6 options including Featured First, Entry Fee (Low/High), Prize Pool, Participants, Starting Soon
+*   **Interactive Filter UI Experience (v1.9):**
+    *   **Active Filters Display:** Removable chips below search bar showing individual filter labels
+    *   **"Clear All" Button:** Quick filter reset option in active filters row
+    *   **Results Count:** "X races found" display for user awareness of filtered results
+    *   **Custom RangeSlider:** Professional dual-thumb interface for precise entry fee range selection
+    *   **Filter Sheet:** Organized form-based interface with proper section grouping and navigation
+*   **Enhanced Race List:** 30+ race cards with comprehensive information display:
+    *   Timing information with deadlines/start times
+    *   Rank requirements clearly visible in race information section
+    *   Color-coded rank badges and timing labels
+*   **Joined Race Indicators (NEW v1.7):** 
+    *   "JOINED" badge prominently displayed on joined race cards
+    *   Visual distinction with enhanced background color and reduced opacity
+    *   Conditional tap interaction - joined races cannot be tapped to prevent redundant navigation
+    *   Clear visual feedback showing which races have been joined across the global platform
+*   **Combinatorial Filtering Logic (v1.9):** All filters work together allowing complex race discovery
+*   **Smart Performance:** Lazy evaluation and efficient filtering optimized for 30+ race dataset
+*   **UI:** `HStack` with search/filter controls, active filter chips, `ScrollView` with `LazyVStack` of enhanced `RaceListCard` components
 
 **3. My Races View (`MyRacesView`):** 
 *   **Section Picker:** `SegmentedPickerStyle` for "Upcoming" vs "In Progress"
-*   **Conditional Display:** Different card lists based on selection
-*   **UI:** `Picker` with segmented style, conditional `ScrollView` with `MyRaceCard` components
+*   **Enhanced Race Display:** Shows rank requirements for joined races to remind users of progression
+*   **Conditional Display:** Different card lists based on selection with rank requirement information
+*   **UI:** `Picker` with segmented style, conditional `ScrollView` with enhanced `MyRaceCard` components
 
 **4. Create Race View (`CreateRaceView`):**
 *   **Form Structure:** Comprehensive race creation form in scrollable card
@@ -235,11 +286,54 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 *   **Implementation:** Full-screen modal with comprehensive race information
 *   **Content Cards:**
     1. **Race Header:** Name, mode, format, workout type, start time with "FEATURED" badge
-    2. **Participants:** Progress bar showing current/max participants with explanation text
-    3. **Prize Structure:** 1st/2nd/3rd place breakdown with ticket amounts and total pool
-    4. **Description:** Race details and rules
+    2. **Enhanced Timing Section:** 
+        *   Larger timing display with color-coded labels
+        *   Dedicated timing card for async deadline warnings
+        *   Clear distinction between live start times and async submission deadlines
+    3. **Rank Requirements & Eligibility:**
+        *   Prominent "Minimum: [Rank] Rank" display with larger text
+        *   Color-coded rank badges (Bronze/Silver/Gold/Plat/Elite)
+        *   Enhanced eligibility messaging with clear progression guidance
+        *   Dedicated red warning card for ineligible users with rank requirement details
+    4. **Participants:** Progress bar showing current/max participants with explanation text
+    5. **Prize Structure:** 1st/2nd/3rd place breakdown with ticket amounts and total pool
+    6. **Description:** Race details and rules
 *   **Join Functionality:** Entry fee display, join button with ticket validation, confirmation dialog
-*   **UI:** `NavigationView` with `ScrollView`, multiple `CardView` sections, `Button` interactions
+*   **Race Card Consistency:** Identical race objects ensure same details across Home and Race tabs
+*   **UI:** `NavigationView` with `ScrollView`, multiple `CardView` sections, enhanced timing displays, rank indicators, eligibility warnings
+
+**Race Filters View (`RaceFiltersView` - Modal Sheet - NEW v1.9, Enhanced v1.10):**
+*   **Trigger:** Tapping filter button in All Races View with comprehensive filter options
+*   **Implementation:** Professional card-based filter interface with 6 organized cards (upgraded from form-based to match Create Race styling)
+*   **Navigation Structure:** Modal sheet with NavigationView, streamlined "Cancel" button navigation
+*   **Card-Based Design (v1.10):**
+    1. **Header Card:** Filter introduction with slider icon and descriptive subtitle explaining purpose
+    2. **Race Type & Format Card:** Combined card with flag icon containing:
+        *   Race Type: Segmented picker for "All", "Live Race", "Async Race" selection
+        *   Race Format: Wheel picker for "All", "Duel", "Regatta", "Tournament" options
+    3. **Status & Requirements Card:** Combined card with seal icon containing:
+        *   Status: Segmented picker for "All", "Upcoming", "In Action", "Completed" states
+        *   Rank Requirements: Wheel picker with rank progression options (All Ranks, Open Races Only, Bronze+, Silver+, Gold+, Plat+, Elite+)
+    4. **Entry Fee Range Card:** Enhanced card with ticket icon containing:
+        *   Visual min/max indicators with styled ticket badges
+        *   Custom RangeSlider with dual-thumb interface and stepped values (5-ticket increments)
+        *   Contextual help text explaining slider usage
+        *   Range bounds: 0-200 tickets covering all race entry fees
+    5. **Availability & Sorting Card:** Combined card with arrow icon containing:
+        *   Availability Toggle: "Only show races I can join" with conditional feedback text
+        *   Sort Options: Wheel picker with 6 intelligent sorting options (Featured First, Entry Fee Low/High, Prize Pool, Participants, Starting Soon)
+    6. **Action Buttons Card:** Professional button styling with:
+        *   Primary "Apply Filters" button with gradient background and shadow
+        *   Secondary "Reset All Filters" button with highlight color styling
+*   **Enhanced Visual Design (v1.10):**
+    *   Color-coded SF Symbol icons for each card header (flag, seal, ticket, arrow icons)
+    *   Professional typography hierarchy with bold headers and clear labels
+    *   Contextual help text and conditional feedback for better user guidance
+    *   Card-based architecture matching Create Race and race card styling
+    *   Enhanced entry fee display with visual ticket badges showing current min/max values
+*   **State Management:** All filter states bound to AllRacesView for real-time filtering application
+*   **Custom Components:** Purpose-built RangeSlider with drag gestures, visual feedback, and improved presentation
+*   **UI:** `NavigationView` with `ScrollView`, organized `CardView` sections, enhanced visual hierarchy, professional action buttons
 
 **Live Race View (`LiveRaceView`):**
 *   **Trigger:** Joining a live race at start, or from "My Races."
@@ -491,3 +585,133 @@ All implemented views follow the design principles outlined in this document:
 *   Proper navigation and back button support
 *   Ticket counter consistency across tabs
 *   Interactive elements with proper feedback
+
+## 5. Enhanced Data Models & User Experience (v1.3-1.4)
+
+### 5.1. Advanced Race Timing System
+**Implementation:** Comprehensive timing display distinguishing live races from async workouts
+*   **Live Races:** Start times with countdown (e.g., "Today 8:00 PM", "Starts in 3 hours")
+*   **Async Races:** Submission deadlines with deadline warnings (e.g., "Sunday 11:59 PM", "2 days remaining")
+*   **Color Coding:** Live races use highlight color (urgent), async races use accent color (flexible)
+*   **Display Format:** Three-line timing format on all race cards:
+    1. Timing label ("Race Start" or "Submission Deadline")
+    2. Specific date/time ("Today 8:00 PM")
+    3. Countdown text ("Starts in 3 hours")
+
+### 5.2. Flexible Rank Requirement System
+**Implementation:** Optional rank requirements supporting both competitive and inclusive racing
+*   **Optional Requirements:** `rankRequirement: String?` allows races without rank cutoffs
+*   **Inclusive Racing:** "Community Open 10k" race with `nil` requirement welcomes all skill levels
+*   **Dynamic UI Display:** Race cards automatically show "Open to: All Ranks" for inclusive races
+*   **Positive Messaging:** "Open to everyone" status with accent color instead of warnings
+*   **Smart Validation:** `UserData.meetsRankRequirement()` returns `true` for open races
+
+### 5.3. Enhanced Rank Requirement Visibility
+**Implementation:** Clear rank progression requirements across all race UI components
+*   **Prominent Display:** "Minimum: [Rank] Rank" on race detail views with larger text
+*   **Color-Coded Ranks:** Bronze (brown), Silver (gray), Gold (yellow), Plat (cyan), Elite (purple), Open (accent)
+*   **Comprehensive Coverage:** Rank requirements shown on:
+    *   `RacePreviewCard` (Home tab featured races)
+    *   `FeaturedRaceCard` and `RaceListCard` (Race tab)
+    *   `MyRaceCard` (joined races reminder)
+    *   `RaceDetailView` (prominent requirement display)
+*   **Conditional Warnings:** Red warning cards only appear for races with actual unmet rank requirements
+*   **Adaptive Messaging:** Section titles change from "Rank Requirement" to "Eligibility" for open races
+
+### 5.4. Complete Race Data Consistency
+**Implementation:** Identical race information across all app locations
+*   **Stable IDs:** Changed from `UUID()` to string-based IDs using race titles
+*   **Shared Objects:** `sampleAllRaces` references exact same objects from `sampleFeaturedRaces`
+*   **Full Discovery:** Home tab displays all 6 featured races with horizontal scrolling
+*   **Identical Details:** Same race cards across tabs point to identical race information
+*   **Consistent Experience:** Users see identical race details regardless of discovery location
+
+### 5.5. Enhanced RaceData Model Structure
+**Current Implementation:** Comprehensive race information with optional rank requirements
+```swift
+struct RaceData: Identifiable {
+    let id: String // Stable string-based ID
+    let title: String
+    let raceType: String // "Live Race" or "Async Race"
+    let rankRequirement: String? // Optional: "Bronze"/"Silver"/"Gold"/"Plat"/"Elite" or nil
+    let specificStartDateTime: String // Live race start time
+    let specificDeadlineDateTime: String // Async submission deadline
+    
+    // Computed properties for flexible display
+    var timingLabel: String
+    var timingDisplayText: String
+    var countdownDisplayText: String
+    var rankDisplayText: String // "Open to: Gold+" or "Open to: All Ranks"
+    var rankColor: String // Color-coded by rank or accent for open races
+}
+```
+
+### 5.6. Featured Race Portfolio
+**Current Races:** 6 featured races covering all skill levels and formats
+1. **Elite 2k Championship** - Elite rank required, Live race, High stakes competition
+2. **Weekend Warriors 5k** - Silver rank required, Async race, Weekend flexibility
+3. **Community Open 10k** - No rank requirement, Async race, Inclusive community event
+4. **Beginner's Sprint Duel** - Bronze rank required, Live race, New racer introduction
+5. **30-Minute Endurance Challenge** - Gold rank required, Async race, Distance accumulation
+6. **Lightning Speed 500m** - Plat rank required, Live race, Sprint intensity
+
+### 5.7. User Experience Improvements
+**Enhanced Discoverability:** All featured races accessible from both Home and Race tabs
+**Inclusive Design:** Mix of competitive rank-restricted and open community races
+**Complete Information:** Users understand timing, eligibility, and requirements before joining
+**Consistent Interface:** Identical race presentation across all UI components
+**Positive Engagement:** Open races use encouraging messaging rather than restrictive warnings
+
+This enhanced system ensures comprehensive race accessibility while maintaining competitive integrity through optional rank requirements.
+
+### 5.8. Enhanced All Races Global Platform (v1.5)
+**Implementation:** Comprehensive worldwide race discovery with professional-grade race ecosystem
+
+**Expanded Race Portfolio:** 30+ races representing global rowing platform
+*   **Elite/Professional Level:** World Championship Qualifier, International Open 6k, European Championship Heat, Pacific Rim 5k, Americas Cup Qualifier
+*   **Competitive Ranks:** Masters Tournament 5k, Speed Demon 750m, Golden Hour 4k for Gold/Platinum level rowers
+*   **Developing Rowers:** Silver Standard 3k, Lunch Break 1500m, Steady State Challenge for Silver level progression
+*   **Beginner Friendly:** Newbie Friendly 2k, Coffee Break 800m, Family Fun Row for Bronze and new rowers
+*   **Open Community:** Charity 10k for Health, Holiday Spirit 3k with inclusive participation
+*   **Extreme Challenges:** Midnight Marathon (21k), 100k Ultra Challenge for ultimate endurance testing
+*   **Time Trials:** Power Hour Challenge (60min), Quick 20 Minutes for distance accumulation races
+*   **Regular Events:** Daily Distance Challenge, Tuesday Night Special, Weekend Warrior Revival for consistent participation
+
+**Enhanced RaceListCard Styling:** Professional race card design matching featured races
+*   **Comprehensive Information Display:** Race title, type/format, workout distance, timing details, rank requirements, participant counts, entry fees, prize pools, race creators
+*   **Enhanced Timing System:** Three-line format with color-coded timing labels, specific dates/times, countdown displays
+*   **Visual Consistency:** Light accent background, proper spacing, visual hierarchy matching featured race cards
+*   **Interactive Elements:** Full tap area, race detail view integration, search highlighting
+
+**Global Platform Scale:** Realistic worldwide competition ecosystem
+*   **Participant Ranges:** 6-8 participants (intimate duels) to 500 participants (major international events)
+*   **Entry Fee Structure:** 10 tickets (daily challenges) to 200 tickets (ultra endurance events)
+*   **Prize Pool Scaling:** 60 tickets (quick sprints) to 8500 tickets (international competitions)
+*   **Creator Diversity:** Official organizations, rowing clubs, coaches, community organizers, individual racers
+*   **Geographic Representation:** International, regional, and local race creators from global rowing community
+
+**Search & Discovery Enhancement:** Advanced race finding capabilities
+*   **Multi-field Search:** Race titles, workout types, descriptions all searchable for comprehensive discovery
+*   **Filter Integration:** Future filter system hookup ready for advanced sorting by rank, type, timing, entry fee
+*   **Featured Integration:** All featured races included in global list while maintaining dedicated featured section
+*   **Consistent Experience:** Identical detail views, join functionality, and information display across all race sources
+
+This enhanced system creates a realistic global rowing competition platform where users can discover races at their skill level, from beginner-friendly community events to elite international championships, all with consistent professional presentation and full functionality.
+
+## 6. Implementation Status Summary
+
+## Race Terminology Clarification
+
+**Race Formats** (How the race is structured):
+- **Live Race**: Real-time synchronized racing where all participants race simultaneously at a specific time
+- **Async Race**: Time-window racing where participants complete the race within a deadline period
+
+**Race Status** (Current state of the race):
+- **UPCOMING**: Race has not started yet (participants can still join)
+- **IN ACTION**: Race is currently active (Live races are happening now, Async races are within submission window)  
+- **COMPLETED**: Race has finished (results available)
+
+**Visual Implementation**:
+- Race cards display both format ("Live Race" or "Async Race") and status badge ("UPCOMING", "IN ACTION", "COMPLETED")
+- Status badges use color coding: Upcoming (accent), In Action (highlight), Completed (secondary)
+- This distinction prevents confusion between "Live Race" format and "Live" status

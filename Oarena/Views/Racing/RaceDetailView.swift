@@ -11,192 +11,316 @@ struct RaceDetailView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject private var userData = UserData.shared
     @State private var showingJoinConfirmation = false
+    @State private var showingInsufficientTickets = false
+    @State private var showingRankRequirementAlert = false
+    @State private var showingJoinSuccess = false
     
-    // Race data - in a real app this would be passed in
-    let raceName: String
-    let raceMode: String
-    let raceFormat: String
-    let workoutType: String
-    let entryFee: Int
-    let maxParticipants: Int
-    let currentParticipants: Int
-    let startTime: String
-    let prizePool: Int
-    let raceDescription: String
+    let race: RaceData
     
-    init(raceName: String = "Elite 2k Championship",
-         raceMode: String = "Regatta",
-         raceFormat: String = "Live",
-         workoutType: String = "2000m Distance",
-         entryFee: Int = 50,
-         maxParticipants: Int = 32,
-         currentParticipants: Int = 24,
-         startTime: String = "1h 30m",
-         prizePool: Int = 1200,
-         raceDescription: String = "Join the elite rowers in this championship 2k race. Test your speed and endurance against the best!") {
-        self.raceName = raceName
-        self.raceMode = raceMode
-        self.raceFormat = raceFormat
-        self.workoutType = workoutType
-        self.entryFee = entryFee
-        self.maxParticipants = maxParticipants
-        self.currentParticipants = currentParticipants
-        self.startTime = startTime
-        self.prizePool = prizePool
-        self.raceDescription = raceDescription
+    var hasEnoughTickets: Bool {
+        userData.ticketCount >= race.entryFee
+    }
+    
+    var meetsRankRequirement: Bool {
+        userData.meetsRankRequirement(race.rankRequirement)
+    }
+    
+    var hasJoinedRace: Bool {
+        userData.hasJoinedRace(race.id)
+    }
+    
+    var canJoinRace: Bool {
+        hasEnoughTickets && meetsRankRequirement && !hasJoinedRace
+    }
+    
+    var joinButtonText: String {
+        if hasJoinedRace {
+            return "Already Joined"
+        } else if !meetsRankRequirement {
+            return "Rank Requirement Not Met"
+        } else if !hasEnoughTickets {
+            return "Insufficient Tickets"
+        } else {
+            return race.status == .live ? "Join Race Now" : "Join Race"
+        }
+    }
+    
+    var joinButtonColor: Color {
+        if hasJoinedRace {
+            return Color.oarenaAccent.opacity(0.6)
+        } else if canJoinRace {
+            return Color.oarenaAccent
+        } else if !meetsRankRequirement {
+            return Color.red.opacity(0.7)
+        } else {
+            return Color.gray
+        }
     }
     
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Race Header
-                    CardView {
+                    // Header Card
+                    CardView(backgroundColor: Color.oarenaAccent.opacity(0.05)) {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                VStack(alignment: .leading) {
-                                    Text(raceName)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(race.title)
                                         .font(.title2)
                                         .fontWeight(.bold)
                                         .foregroundColor(.oarenaPrimary)
                                     
-                                    Text("\(raceFormat) Race • \(raceMode)")
-                                        .font(.subheadline)
-                                        .foregroundColor(.oarenaHighlight)
-                                }
-                                
-                                Spacer()
-                                
-                                Text("FEATURED")
-                                    .font(.caption)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.oarenaHighlight)
-                                    .cornerRadius(4)
-                            }
-                            
-                            Divider()
-                            
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text("Workout")
-                                        .font(.caption)
-                                        .foregroundColor(.oarenaSecondary)
-                                    Text(workoutType)
-                                        .font(.subheadline)
+                                    HStack {
+                                        Text("\(race.raceType) • \(race.format)")
+                                            .font(.subheadline)
+                                            .foregroundColor(.oarenaHighlight)
+                                        
+                                        Spacer()
+                                        
+                                        if race.isFeatured {
+                                            Text("FEATURED")
+                                                .font(.caption)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(Color.oarenaHighlight)
+                                                .cornerRadius(4)
+                                        }
+                                    }
+                                    
+                                    Text(race.workoutType)
+                                        .font(.headline)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.oarenaPrimary)
-                                }
-                                
-                                Spacer()
-                                
-                                VStack(alignment: .trailing) {
-                                    Text("Starts in")
-                                        .font(.caption)
-                                        .foregroundColor(.oarenaSecondary)
-                                    Text(startTime)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.oarenaPrimary)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Participants
-                    CardView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Participants")
-                                    .font(.headline)
-                                    .foregroundColor(.oarenaPrimary)
-                                
-                                Spacer()
-                                
-                                Text("\(currentParticipants) / \(maxParticipants)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.oarenaSecondary)
-                            }
-                            
-                            ProgressView(value: Double(currentParticipants), total: Double(maxParticipants))
-                                .tint(.oarenaAccent)
-                            
-                            Text("Race will start when \(maxParticipants) participants join or at the scheduled time.")
-                                .font(.caption)
-                                .foregroundColor(.oarenaSecondary)
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Prize Structure
-                    CardView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Prize Structure")
-                                .font(.headline)
-                                .foregroundColor(.oarenaPrimary)
-                            
-                            VStack(spacing: 8) {
-                                HStack {
-                                    Text("🥇 1st Place")
-                                        .font(.subheadline)
-                                        .foregroundColor(.oarenaPrimary)
-                                    Spacer()
-                                    HStack {
-                                        Image(systemName: "ticket.fill")
-                                            .foregroundColor(.oarenaAction)
-                                        Text("\(Int(Double(prizePool) * 0.5))")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.oarenaPrimary)
-                                    }
-                                }
-                                
-                                HStack {
-                                    Text("🥈 2nd Place")
-                                        .font(.subheadline)
-                                        .foregroundColor(.oarenaPrimary)
-                                    Spacer()
-                                    HStack {
-                                        Image(systemName: "ticket.fill")
-                                            .foregroundColor(.oarenaAction)
-                                        Text("\(Int(Double(prizePool) * 0.3))")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.oarenaPrimary)
-                                    }
-                                }
-                                
-                                HStack {
-                                    Text("🥉 3rd Place")
-                                        .font(.subheadline)
-                                        .foregroundColor(.oarenaPrimary)
-                                    Spacer()
-                                    HStack {
-                                        Image(systemName: "ticket.fill")
-                                            .foregroundColor(.oarenaAction)
-                                        Text("\(Int(Double(prizePool) * 0.2))")
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.oarenaPrimary)
-                                    }
+                                        .foregroundColor(.oarenaAccent)
                                 }
                             }
                             
                             Divider()
                             
-                            HStack {
-                                Text("Total Prize Pool")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.oarenaPrimary)
-                                Spacer()
-                                HStack {
-                                    Image(systemName: "ticket.fill")
-                                        .foregroundColor(.oarenaAction)
-                                    Text("\(prizePool)")
-                                        .font(.subheadline)
+                            // Race timing info
+                            VStack(alignment: .leading, spacing: 8) {
+                                // Enhanced timing display
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Image(systemName: race.raceType == "Live Race" ? "play.circle" : "calendar")
+                                            .foregroundColor(race.raceType == "Live Race" ? .oarenaHighlight : .oarenaAccent)
+                                        
+                                        Text(race.timingLabel)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(race.raceType == "Live Race" ? .oarenaHighlight : .oarenaAccent)
+                                        
+                                        Spacer()
+                                        
+                                        Text(race.statusText)
+                                            .font(.caption)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(race.status == .upcoming ? Color.oarenaAccent : 
+                                                      race.status == .live ? Color.oarenaHighlight : Color.oarenaSecondary)
+                                            .cornerRadius(4)
+                                    }
+                                    
+                                    Text(race.timingDisplayText)
+                                        .font(.title3)
                                         .fontWeight(.bold)
                                         .foregroundColor(.oarenaPrimary)
+                                    
+                                    Text(race.countdownDisplayText)
+                                        .font(.subheadline)
+                                        .foregroundColor(.oarenaSecondary)
+                                }
+                                
+                                HStack {
+                                    Image(systemName: "person.2")
+                                        .foregroundColor(.oarenaSecondary)
+                                    Text(race.participants)
+                                        .font(.subheadline)
+                                        .foregroundColor(.oarenaSecondary)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // Dedicated Timing Card
+                    CardView(backgroundColor: race.raceType == "Live Race" ? 
+                             Color.oarenaHighlight.opacity(0.1) : Color.oarenaAccent.opacity(0.1)) {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: race.raceType == "Live Race" ? "play.circle.fill" : "calendar.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(race.raceType == "Live Race" ? .oarenaHighlight : .oarenaAccent)
+                                
+                                Text(race.timingLabel)
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(race.raceType == "Live Race" ? .oarenaHighlight : .oarenaAccent)
+                                
+                                Spacer()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(race.timingDisplayText)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.oarenaPrimary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                Text(race.countdownDisplayText)
+                                    .font(.subheadline)
+                                    .foregroundColor(.oarenaSecondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                if race.raceType == "Async Race" && race.status == .live {
+                                    HStack {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.caption)
+                                        Text("Submit your result before the deadline!")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.orange)
+                                    }
+                                    .padding(.top, 4)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // Dedicated Rank Requirement Card (if user doesn't meet requirement)
+                    if !meetsRankRequirement && race.rankRequirement != nil {
+                        CardView(backgroundColor: Color.red.opacity(0.1)) {
+                            VStack(spacing: 12) {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.red)
+                                    
+                                    Text("Rank Requirement Not Met")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.red)
+                                    
+                                    Spacer()
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("This race requires \(race.rankRequirement!)+ rank")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.oarenaPrimary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    
+                                    Text("Your current rank: \(userData.currentRank)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.oarenaSecondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    
+                                    Text("Keep training to improve your rank and unlock this race!")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // Prize and Entry Info
+                    CardView {
+                        HStack(spacing: 0) {
+                            VStack(spacing: 16) {
+                                VStack(spacing: 4) {
+                                    Text("Entry Fee")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "ticket.fill")
+                                            .foregroundColor(.oarenaAction)
+                                            .font(.subheadline)
+                                        Text("\(race.entryFee)")
+                                            .font(.headline)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.oarenaPrimary)
+                                    }
+                                }
+                                
+                                VStack(spacing: 4) {
+                                    Text(race.rankRequirement != nil ? "Rank Requirement" : "Eligibility")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    VStack(spacing: 6) {
+                                        Text(race.rankDisplayText)
+                                            .font(.headline)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(
+                                                Color(race.rankColor)
+                                            )
+                                        
+                                        if let requirement = race.rankRequirement {
+                                            Text("Minimum: \(requirement) Rank")
+                                                .font(.caption)
+                                                .foregroundColor(.oarenaSecondary)
+                                        } else {
+                                            Text("No rank requirement")
+                                                .font(.caption)
+                                                .foregroundColor(.oarenaSecondary)
+                                        }
+                                    }
+                                    
+                                    // Eligibility status
+                                    HStack(spacing: 4) {
+                                        Image(systemName: meetsRankRequirement ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                            .font(.caption)
+                                            .foregroundColor(meetsRankRequirement ? .green : .red)
+                                        
+                                        Text(race.rankRequirement != nil ? 
+                                             (meetsRankRequirement ? "You are eligible" : "Rank requirement not met") :
+                                             "Open to everyone")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(race.rankRequirement != nil ? 
+                                                           (meetsRankRequirement ? .green : .red) : .oarenaAccent)
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(spacing: 8) {
+                                VStack(spacing: 4) {
+                                    Text("Total Prize Pool")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "trophy.fill")
+                                            .foregroundColor(.oarenaHighlight)
+                                            .font(.subheadline)
+                                        Text("\(race.prizePool)")
+                                            .font(.headline)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.oarenaPrimary)
+                                    }
+                                }
+                                
+                                VStack(spacing: 4) {
+                                    Text("Created by")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    Text(race.createdBy)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.oarenaAccent)
                                 }
                             }
                         }
@@ -204,67 +328,90 @@ struct RaceDetailView: View {
                     .padding(.horizontal)
                     
                     // Description
-                    if !raceDescription.isEmpty {
-                        CardView {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Description")
-                                    .font(.headline)
-                                    .foregroundColor(.oarenaPrimary)
-                                
-                                Text(raceDescription)
-                                    .font(.subheadline)
-                                    .foregroundColor(.oarenaSecondary)
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    
-                    // Join Button
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("Entry Fee:")
+                    CardView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Description")
+                                .font(.headline)
+                                .foregroundColor(.oarenaPrimary)
+                            
+                            Text(race.description)
                                 .font(.subheadline)
                                 .foregroundColor(.oarenaSecondary)
-                            
-                            HStack {
-                                Image(systemName: "ticket.fill")
-                                    .foregroundColor(.oarenaAction)
-                                Text("\(entryFee) Tickets")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.oarenaPrimary)
-                            }
-                            
-                            Spacer()
+                                .lineLimit(nil)
                         }
-                        .padding(.horizontal)
-                        
+                    }
+                    .padding(.horizontal)
+                    
+                    // Race Rules
+                    CardView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Race Rules")
+                                .font(.headline)
+                                .foregroundColor(.oarenaPrimary)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                RuleItem(text: "Complete the full distance/time as specified")
+                                RuleItem(text: "Must use PM5 connected device for verification")
+                                RuleItem(text: race.raceType == "Live Race" ? 
+                                        "All participants race simultaneously" : 
+                                        "Complete anytime during the race window")
+                                RuleItem(text: "No false starts or restarts allowed")
+                                RuleItem(text: "Winners receive tickets based on placement")
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // Join Button
+                    if (race.status == .upcoming || race.status == .live) && !hasJoinedRace {
                         Button(action: {
-                            if userData.ticketCount >= entryFee {
+                            if canJoinRace {
                                 showingJoinConfirmation = true
+                            } else if !meetsRankRequirement {
+                                showingRankRequirementAlert = true
+                            } else {
+                                showingInsufficientTickets = true
                             }
                         }) {
                             HStack {
-                                Image(systemName: "flag.checkered")
-                                Text("Join Race (\(entryFee) Tickets)")
+                                Image(systemName: race.status == .live ? "play.fill" : "person.badge.plus")
+                                Text(joinButtonText)
                             }
                             .font(.headline)
                             .fontWeight(.medium)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(userData.ticketCount >= entryFee ? Color.oarenaAccent : Color.gray)
+                            .background(joinButtonColor)
                             .cornerRadius(12)
                         }
-                        .disabled(userData.ticketCount < entryFee)
+                        .disabled(!canJoinRace)
                         .padding(.horizontal)
-                        
-                        if userData.ticketCount < entryFee {
-                            Text("Not enough tickets to join this race")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .padding(.horizontal)
+                    }
+                    
+                    // Already Joined Status
+                    if hasJoinedRace {
+                        CardView(backgroundColor: Color.oarenaAccent.opacity(0.1)) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.oarenaAccent)
+                                    .font(.title2)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("You've Joined This Race")
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.oarenaPrimary)
+                                    
+                                    Text("Check 'My Races' tab to see race details and start when ready.")
+                                        .font(.subheadline)
+                                        .foregroundColor(.oarenaSecondary)
+                                }
+                                
+                                Spacer()
+                            }
                         }
+                        .padding(.horizontal)
                     }
                     
                     Spacer(minLength: 20)
@@ -274,25 +421,62 @@ struct RaceDetailView: View {
             .navigationTitle("Race Details")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
-                leading: Button("Back") {
+                leading: Button("Close") {
                     presentationMode.wrappedValue.dismiss()
                 }
             )
         }
-        .alert("Join Race", isPresented: $showingJoinConfirmation) {
+        .alert("Join Race?", isPresented: $showingJoinConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Join") {
-                if userData.spendTickets(entryFee) {
-                    // Race joined successfully
-                    presentationMode.wrappedValue.dismiss()
+                if userData.joinRace(race) {
+                    showingJoinSuccess = true
                 }
             }
         } message: {
-            Text("Are you sure you want to join \(raceName) for \(entryFee) tickets?")
+            Text("Entry fee: \(race.entryFee) tickets\nYou will have \(userData.ticketCount - race.entryFee) tickets remaining.")
+        }
+        .alert("Successfully Joined!", isPresented: $showingJoinSuccess) {
+            Button("OK") {
+                presentationMode.wrappedValue.dismiss()
+            }
+        } message: {
+            Text("You've joined \(race.title). Check your 'My Races' tab to view details and start when ready.")
+        }
+        .alert("Insufficient Tickets", isPresented: $showingInsufficientTickets) {
+            Button("OK") { }
+            Button("Buy Tickets") {
+                // Open ticket store
+            }
+        } message: {
+            Text("You need \(race.entryFee) tickets to join this race. You currently have \(userData.ticketCount) tickets.")
+        }
+        .alert("Rank Requirement Not Met", isPresented: $showingRankRequirementAlert) {
+            Button("OK") { }
+        } message: {
+            Text(userData.getRankRequirementExplanation(race.rankRequirement))
+        }
+    }
+}
+
+struct RuleItem: View {
+    let text: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.oarenaAccent)
+                .font(.caption)
+                .padding(.top, 2)
+            
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.oarenaSecondary)
+                .lineLimit(nil)
         }
     }
 }
 
 #Preview {
-    RaceDetailView()
+    RaceDetailView(race: RaceData.sampleFeaturedRaces[0])
 } 

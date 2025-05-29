@@ -11,8 +11,38 @@ struct WorkoutHistoryView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedFilter = 0
     @State private var searchText = ""
+    @State private var selectedWorkout: WorkoutData?
+    @State private var showingWorkoutDetail = false
     
     let filterOptions = ["All", "Solo Rows", "Races", "This Week", "This Month"]
+    
+    // Using actual workout data
+    var allWorkouts: [WorkoutData] {
+        WorkoutData.sampleWorkouts
+    }
+    
+    var filteredWorkouts: [WorkoutData] {
+        let filtered = allWorkouts.filter { workout in
+            if searchText.isEmpty {
+                return true
+            }
+            return workout.workoutType.localizedCaseInsensitiveContains(searchText) ||
+                   workout.summary.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        switch selectedFilter {
+        case 1: // Solo Rows
+            return filtered.filter { $0.workoutType.contains("Solo") || $0.workoutType.contains("Row") }
+        case 2: // Races
+            return filtered.filter { $0.workoutType.contains("Race") }
+        case 3: // This Week (simplified - showing first 7 workouts)
+            return Array(filtered.prefix(7))
+        case 4: // This Month (simplified - showing first 15 workouts)
+            return Array(filtered.prefix(15))
+        default: // All
+            return filtered
+        }
+    }
     
     var body: some View {
         NavigationView {
@@ -56,9 +86,9 @@ struct WorkoutHistoryView: View {
                             .foregroundColor(.oarenaPrimary)
                         
                         HStack {
-                            StatSummaryItem(title: "Total Workouts", value: "87", icon: "figure.rowing")
+                            StatSummaryItem(title: "Total Workouts", value: "\(allWorkouts.count)", icon: "figure.rowing")
                             Spacer()
-                            StatSummaryItem(title: "This Week", value: "5", icon: "calendar.day.timeline.leading")
+                            StatSummaryItem(title: "This Week", value: "\(min(7, allWorkouts.count))", icon: "calendar.day.timeline.leading")
                             Spacer()
                             StatSummaryItem(title: "Avg/Week", value: "3.2", icon: "chart.line.uptrend.xyaxis")
                         }
@@ -70,9 +100,13 @@ struct WorkoutHistoryView: View {
                 // Workout List
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(0..<20) { index in
-                            WorkoutHistoryCard(workoutIndex: index)
+                        ForEach(filteredWorkouts) { workout in
+                            WorkoutHistoryCard(workout: workout)
                                 .padding(.horizontal)
+                                .onTapGesture {
+                                    selectedWorkout = workout
+                                    showingWorkoutDetail = true
+                                }
                         }
                     }
                     .padding(.top, 8)
@@ -85,6 +119,23 @@ struct WorkoutHistoryView: View {
                     presentationMode.wrappedValue.dismiss()
                 }
             )
+        }
+        .sheet(isPresented: $showingWorkoutDetail) {
+            if let workout = selectedWorkout {
+                WorkoutSummaryView(
+                    workoutType: workout.workoutType,
+                    date: workout.date,
+                    totalTime: workout.totalTime,
+                    distance: workout.distance,
+                    avgPace: workout.avgPace,
+                    avgPower: workout.avgPower,
+                    avgSPM: workout.avgSPM,
+                    maxHeartRate: workout.maxHeartRate,
+                    calories: workout.calories,
+                    ticketsEarned: workout.ticketsEarned,
+                    rankPointsGained: workout.rankPointsGained
+                )
+            }
         }
     }
 }
@@ -133,18 +184,10 @@ struct StatSummaryItem: View {
 }
 
 struct WorkoutHistoryCard: View {
-    let workoutIndex: Int
-    
-    // Sample data arrays for variety
-    private let workoutTypes = ["Solo Row", "Race", "Solo Row", "Training", "Race"]
-    private let distances = ["2000m", "5000m", "10000m", "6000m", "2000m"]
-    private let times = ["7:15.2", "20:15.8", "42:30.1", "24:45.0", "7:22.1"]
-    private let splits = ["1:48/500m", "1:45/500m", "1:52/500m", "1:51/500m", "1:50/500m"]
-    private let dates = ["Today", "Yesterday", "2 days ago", "3 days ago", "5 days ago"]
-    private let tickets = [25, 15, 30, 20, 35]
+    let workout: WorkoutData
     
     var isRace: Bool {
-        workoutTypes[workoutIndex % workoutTypes.count] == "Race"
+        workout.workoutType.contains("Race")
     }
     
     var body: some View {
@@ -154,7 +197,7 @@ struct WorkoutHistoryCard: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(workoutTypes[workoutIndex % workoutTypes.count])
+                            Text(workout.workoutType)
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .foregroundColor(.oarenaPrimary)
@@ -166,7 +209,7 @@ struct WorkoutHistoryCard: View {
                             }
                         }
                         
-                        Text(dates[workoutIndex % dates.count])
+                        Text(workout.timeAgo)
                             .font(.caption)
                             .foregroundColor(.oarenaSecondary)
                     }
@@ -178,14 +221,14 @@ struct WorkoutHistoryCard: View {
                             Image(systemName: "ticket.fill")
                                 .foregroundColor(.oarenaAction)
                                 .font(.caption)
-                            Text(isRace ? "+\(tickets[workoutIndex % tickets.count])" : "\(tickets[workoutIndex % tickets.count])")
+                            Text(isRace ? "+\(workout.ticketsEarned)" : "\(workout.ticketsEarned)")
                                 .font(.caption)
                                 .foregroundColor(isRace ? .green : .oarenaSecondary)
                                 .fontWeight(.medium)
                         }
                         
-                        if isRace {
-                            Text("+12 RP")
+                        if isRace && workout.rankPointsGained > 0 {
+                            Text("+\(workout.rankPointsGained) RP")
                                 .font(.caption)
                                 .foregroundColor(.green)
                                 .fontWeight(.medium)
@@ -195,18 +238,18 @@ struct WorkoutHistoryCard: View {
                 
                 // Performance metrics
                 HStack {
-                    MetricItem(title: "Distance", value: distances[workoutIndex % distances.count])
+                    MetricItem(title: "Distance", value: "\(workout.distance)m")
                     Spacer()
-                    MetricItem(title: "Time", value: times[workoutIndex % times.count])
+                    MetricItem(title: "Time", value: workout.totalTime)
                     Spacer()
-                    MetricItem(title: "Avg Split", value: splits[workoutIndex % splits.count])
+                    MetricItem(title: "Avg Split", value: workout.avgPace)
                 }
                 
                 // Additional details for races
                 if isRace {
                     Divider()
                     HStack {
-                        Text("Elite 2k Sprint Championship")
+                        Text("Elite Championship")
                             .font(.caption)
                             .foregroundColor(.oarenaSecondary)
                         
@@ -217,8 +260,18 @@ struct WorkoutHistoryCard: View {
                             .foregroundColor(.oarenaSecondary)
                     }
                 }
+                
+                // Add tap indicator
+                HStack {
+                    Spacer()
+                    Text("Tap to view details")
+                        .font(.caption)
+                        .foregroundColor(.oarenaAccent)
+                        .italic()
+                }
             }
         }
+        .contentShape(Rectangle()) // Makes entire card tappable
     }
 }
 
