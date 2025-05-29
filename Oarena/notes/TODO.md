@@ -7,6 +7,9 @@
 - [x] Built reusable `CardView` component for consistent card-based UI
 - [x] Implemented `MainTabView` with 5 main navigation tabs
 - [x] Created comprehensive folder structure in Views/ directory
+- [x] **NEW**: Shared `UserData` model for consistent ticket count across all tabs
+- [x] **NEW**: `TabSwitcher` class for programmatic tab navigation
+- [x] **NEW**: Ticket counter visible on Home, Train, and Race tabs
 
 ### Home Tab
 - [x] `HomeView` with ticket counter, welcome card, user stats
@@ -20,6 +23,9 @@
 - [x] **NEW**: Ticket counter moved to top-right corner with store navigation
 - [x] **NEW**: Comprehensive `TicketStoreView` with 3 categories (Ticket Packs, Premium, Bundles)
 - [x] **NEW**: Current balance display, purchase cards, and "How to Earn Tickets" guidance
+- [x] **NEW**: Fully functional Quick Start buttons - "Start Solo Row" navigates to Train tab and pre-fills "Just Row"
+- [x] **NEW**: "Find a Race" button navigates to Race tab
+- [x] **NEW**: Race preview cards open detailed `RaceDetailView` with join functionality
 
 ### Training Tab
 - [x] `SoloTrainingView` with workout type selection
@@ -31,6 +37,7 @@
 - [x] **NEW**: Updated workout type selection from segmented picker to individual buttons
 - [x] **NEW**: Enhanced button layout with better spacing and readability
 - [x] **NEW**: "View All" button functionality connecting to comprehensive workout history
+- [x] **NEW**: Integrated with shared UserData for workout type pre-filling from Home tab navigation
 
 ### Race Tab
 - [x] `RaceHubView` with 4-tab segmented control
@@ -40,6 +47,7 @@
 - [x] Create race view with comprehensive race creation form
 - [x] Race cards showing entry fees, participant counts, timing
 - [x] PM5 connection status at top of race sections
+- [x] **NEW**: Comprehensive `RaceDetailView` with full race information, participant tracking, prize structure, and join functionality
 
 ### Rankings Tab
 - [x] `LeaderboardView` with scope selection (Global, Regional, Friends, Groups)
@@ -65,6 +73,29 @@
 - [x] Rank badge components for tier visualization
 - [x] Preview cards for races and workouts
 - [x] Proper navigation structure with NavigationView/NavigationLink
+- [x] **NEW**: `UserData` singleton for shared state management
+- [x] **NEW**: `TabSwitcher` for programmatic navigation between tabs
+- [x] **NEW**: `RaceDetailView` with comprehensive race information and interaction
+
+## ✅ COMPLETED - Interactive Navigation & State Management (v1.1)
+
+### Cross-Tab Navigation
+- [x] Home → Train tab navigation with workout type pre-filling
+- [x] Home → Race tab navigation 
+- [x] Race preview cards → Race detail modal presentation
+- [x] Consistent ticket counter across Home, Train, and Race tabs
+- [x] Shared state management for user data and navigation
+
+### Functional Interactive Elements
+- [x] All Home tab buttons are fully functional and navigate as specified
+- [x] Race detail view with join functionality and ticket spending
+- [x] Workout history accessible from both Home and Train tabs
+- [x] Ticket store accessible from ticket counter on all relevant tabs
+- [x] Confirmation dialogs for race joining with ticket deduction
+- [x] **NEW**: Recent Workouts Cards - individual tappable workout cards in Home tab
+- [x] **NEW**: WorkoutSummaryView - comprehensive workout detail view with performance metrics
+- [x] **NEW**: WorkoutData model with sample workout data for realistic display
+- [x] **NEW**: Enhanced Recent Activity section showing 4 recent workout cards with tickets earned
 
 ## 🚧 NEXT PHASE - Backend Integration & Functionality
 

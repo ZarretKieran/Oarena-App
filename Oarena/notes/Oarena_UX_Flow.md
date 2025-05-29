@@ -3,7 +3,7 @@
 This document outlines the user experience (UX) flow for the Oarena application, detailing navigation, menus, UI elements, and user interactions. The goal is to create a streamlined, intuitive, fun, and engaging experience for Concept2 PM5 users.
 
 ## Style Guide
-Consult @Oarena_Creative_Guidelines.md in the @notes folder for stylistic guidelines.
+Consult `Oarena_Creative_Guidelines.md` in the @notes folder for stylistic guidelines.
 
 ## 1. Overall App Structure & Navigation
 
@@ -28,6 +28,7 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 *   **Feedback:** Immediate visual (and occasional haptic) responses to actions.
 *   **Efficiency:** Minimized taps for common actions.
 *   **Engagement:** Warm colors, sporty icons (SF Symbols, custom for brand), smooth SwiftUI animations, and extensive use of card-based UI for a "fun and sporty vibe." Exclusively native iOS SwiftUI elements.
+*   **Interconnectedness:** Ensure that there is always a button to get from one screen back to the previous screen (a user should never get "stuck" on a screen e.g. the race setup). Utilize a "back" button with a chevron icon in the top left of screens for this.
 
 ## 2. Detailed UX Flows per Section
 
@@ -92,7 +93,7 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 
 **Content & Sections (Cards):**
 
-0.  **Ticket Counter:** At the top. Tapping navigates to `StoreView` (see 2.8) for ticket purchases.
+0.  **Ticket Counter:** At the top right corner, small. Tapping navigates to `StoreView` (see 2.8) for ticket purchases.
 
 1.  **Welcome & User Stats Card:**
     *   Greeting: "What's up, \[Username]!"
@@ -108,10 +109,13 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   Tap navigates to `RaceDetailView` (within Race Tab context).
     *   **UI:** ScrollView, Card views, Text, Icons.
 
-4.  **Recent Activity/Progress Card (Optional):**
-    *   Summary of last solo workout (e.g., "Last Row: 5000m, 20:00, 1:45/500m avg.").
-    *   Link to full workout history (Profile).
-    *   **UI:** Text, display cards.
+4.  **Recent Workouts Card (Enhanced):**
+    *   **Implementation:** Displays 4 most recent solo workouts as individual tappable cards.
+    *   **Per Workout Card:** Workout type (e.g., "5000m Distance Row"), summary metrics (distance, time, avg pace), time ago, tickets earned, and rowing icon.
+    *   **Tap Behavior:** Opens full `WorkoutSummaryView` (see 2.4) with detailed metrics and performance analysis.
+    *   **"View All" Button:** Links to comprehensive workout history (`WorkoutHistoryView` in Profile).
+    *   **UI:** `LazyVStack` of `WorkoutCard` components, each with icon, text summary, and ticket display.
+    *   **Data Source:** `WorkoutData` model with sample workout data including various workout types.
 
 5.  **Featured Content/News Card (Optional):** App news, features, community highlights.
     *   **UI:** Image, Text, Link.
@@ -124,17 +128,30 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 
 **Main View (`SoloTrainingView`):**
 
-1.  **Setup Workout Card:**
+1.  **PM5 Connection Status Card:** Interactive card at top showing connection status (green/red indicator). Tappable to toggle connection state for demo purposes.
+
+2.  **Setup Workout Card:**
     *   Title: "Start a New Solo Row."
-    *   Workout type options ("Just Row" [default], Single Distance, Single Time, Intervals: Distance, Intervals: Time). Future: Set Calories, Predefined Workouts.
-        *   User inputs parameters (distance, time, splits, rest) via TextFields, Pickers, or Sliders.
-    *   Button: "Start Rowing" (active if PM5 connected & parameters valid).
-    *   **UI:** SegmentedControl/Picker for type, TextFields, Steppers, Sliders for input, Button.
+    *   **Workout Type Selection:** Individual button grid layout (not SegmentedControl):
+        *   **First Row:** "Just Row" [default], "Single Distance", "Single Time" 
+        *   **Second Row (Centered):** "Intervals: Distance", "Intervals: Time"
+        *   Each button shows title and subtitle, with selected state styling
+        *   **Implementation:** `WorkoutTypeButton` components in `VStack` with `HStack` rows
+        *   **State Management:** Uses shared `UserData.selectedWorkoutType` for cross-tab consistency
+    *   **Dynamic Parameter Input:** Based on selected workout type:
+        *   **Single Distance:** Distance in meters (`TextField`)
+        *   **Single Time:** Time in minutes (`TextField`) 
+        *   **Intervals Distance:** Distance, Rest time, Sets (`HStack` of `TextField`s)
+        *   **Intervals Time:** Time, Rest time, Sets (`HStack` of `TextField`s)
+    *   **Start Button:** "Start Rowing" (active if PM5 connected & parameters valid).
+    *   **UI:** Individual button grid, `TextField`s with `RoundedBorderTextFieldStyle`, `Button`.
 
-2.  **PM5 Connection Prompt (Contextual):** If PM5 disconnected, prominent "Connect PM5 to Start Training" message/button.
+3.  **PM5 Connection Prompt (Contextual):** If PM5 disconnected, prominent warning card with icon, message "Connect PM5 to Start Training," and "Connect PM5" button.
 
-3.  **Recent Solo Workouts List (Optional):** Brief list of recent workouts as expandable cards showing key stats. Tap to view full details.
-    *   **UI:** List of expandable cards, Text.
+4.  **Recent Solo Workouts Card:** Brief list of recent workouts showing workout name, metrics, date, and tickets earned. "View All" button links to full history. Tap workout rows for details.
+    *   **UI:** `LazyVStack` of `WorkoutPreviewRow` components, expandable cards showing key stats.
+
+**Ticket Counter:** Identical to Home tab - top-right navigation bar with ticket count and plus icon.
 
 **During Workout View (`WorkoutInProgressView` - Full Screen):**
 *   **Trigger:** Tap "Start Rowing" with connected PM5.
@@ -145,11 +162,39 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   "End Workout" Button: Stops tracking *in Oarena only*. User is prompted to save current progress and reminded to manually end the workout on the PM5. Workout saved as 'completed' up to that point.
     *   **UI:** Buttons with clear icons.
 
-**Post-Workout Summary View (`WorkoutSummaryView` - Card):**
-*   **Trigger:** User ends and saves workout.
-*   **Content:** Totals (Time, Distance), Averages (Pace, Power, SPM, HR), Calories, Max HR. "Tickets" Earned (with info icon explaining calculation: volume + intensity). Rank Points (RP) gained and resulting rank tier improvement. Optional performance charts (`SwiftUI Charts`).
-*   **Buttons:** "Done" (returns to Train tab), "Save & View Details" (saves to history, navigates to `WorkoutDetailView` under Profile).
-*   **UI:** Text, Icons, Button, `Charts`.
+**Post-Workout Summary View (`WorkoutSummaryView` - Modal):**
+*   **Trigger:** User ends and saves workout, or taps workout card from Home/Train/Profile.
+*   **Navigation:** Full-screen modal with NavigationView, "Back" button for dismissal.
+*   **Content Sections:**
+    1.  **Workout Header Card:**
+        *   Workout type and date
+        *   Rowing icon
+        *   Key totals: Total Time, Distance (side-by-side display)
+        *   **UI:** CardView with title, subtitle, and key metrics grid
+    
+    2.  **Performance Metrics Card:**
+        *   2x2 grid of metric cards: Average Pace, Average Power, Average SPM, Max Heart Rate
+        *   Each metric has icon, label, and value
+        *   **UI:** `LazyVGrid` with `MetricCard` components, icons from SF Symbols
+    
+    3.  **Workout Results Card:**
+        *   Calories burned (with flame icon)
+        *   Tickets earned (with ticket icon and "+X" display)
+        *   Rank Points gained (with chart icon and "+X RP" display)
+        *   **UI:** Side-by-side layout with divider, prominent value displays
+    
+    4.  **Information Card:**
+        *   "How Rewards Are Calculated" explanation
+        *   Details about ticket earning based on volume + intensity
+        *   Rank Points explanation relative to current tier
+        *   **UI:** Light accent background, info icon, explanatory text
+*   **Buttons:** "Back" (dismisses modal)
+*   **UI Implementation:** SwiftUI with CardView components, proper Oarena color scheme, SF Symbols icons
+
+**Workout Data Model:**
+*   **Structure:** `WorkoutData` with complete metrics (type, date, time, distance, pace, power, SPM, HR, calories, tickets, RP)
+*   **Sample Data:** 5 realistic workout examples including distance rows, time rows, intervals, and just row sessions
+*   **Summary Property:** Contextual summary text for card display (varies by workout type)
 
 ---
 
@@ -158,34 +203,43 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 **Goal:** Central hub to find, join, create, and participate in races (Asynchronous & Real-time; Duels, Regattas, Tournaments).
 
 **Main View (`RaceHubView`):**
-*   Tabbed interface/SegmentedControl for sub-sections. Card-based UI for race listings.
-*   **Sub-sections:**
-    1.  **Featured/Live Races:** Prominent cards for ongoing/upcoming live races, special events, public races, or races with friends. Cards note average rank of participants.
-    2.  **All Races (`RaceListingView`):** Filterable (Mode, Format, Entry Fee, Distance/Time, participant rank) & sortable (Start Time, Fee, Popularity) list of all races, prioritizing similar-ranked opponents.
-    3.  **My Races (`MyRacesView`):** User's registered/in-progress races ("Upcoming," "In Progress"). Completed races are in Profile > Race History.
-    4.  **Create Race (`ScheduleRaceView`):** Interface to set up user-defined races.
+*   **PM5 Connection Status Card:** Identical to Train tab - shows at top of view.
+*   **Tab Selection:** `SegmentedPickerStyle` with four sections: "Featured", "All Races", "My Races", "Create"
+*   **Content Display:** `TabView` with `PageTabViewStyle` (no index indicators) for smooth tab switching
+*   **Ticket Counter:** Identical to Home/Train tabs - top-right navigation bar with ticket count and plus icon.
 
-**1. Featured/Live Races View:** Curated list with larger cards, countdowns, participant counts.
-    *   **UI:** `ScrollView`, custom `CardView`.
+**Sub-sections Implementation:**
 
-**2. All Races View (`RaceListingView`):**
-    *   **Filters/Sorts:** `Picker`/custom filter sheet, `Menu`.
-    *   **Race List:** `CardView` per race (Name, Mode, Format, Distance/Time, Ticket Fee, Participants, Start/Deadline). Tap card to open `RaceDetailView`. Ticket price clearly shown.
-    *   **UI:** `List`/`ScrollView` of `CardView`s, Text, Icons.
+**1. Featured Races View (`FeaturedRacesView`):**
+*   Curated list of 5 featured race cards in vertical scroll
+*   **UI:** `ScrollView` with `LazyVStack` of `FeaturedRaceCard` components
 
-**3. My Races View (`MyRacesView`):** Segmented ("Upcoming," "In Progress"). Lists races similar to `AllRacesView`. Tap card for `RaceDetailView`.
+**2. All Races View (`AllRacesView`):**
+*   **Search Bar:** Text field with magnifying glass icon
+*   **Filter Button:** Slider icon button opening `RaceFiltersView` sheet
+*   **Race List:** 10 race cards in vertical scroll
+*   **UI:** `HStack` with search/filter, `ScrollView` with `LazyVStack` of `RaceListCard` components
 
-**4. Create Race View (`ScheduleRaceView` - Modal/Sheet):**
-    *   **Form:** Race Name, Mode (`Picker`), Format (`Picker`), Max Participants (if Group), Workout Type/Value, Entry Fee (Tickets), Start Time/Deadline (Live - `DatePicker`), Race Window (Async - `DatePicker`), Optional Description.
-    *   **Validation:** Logical inputs. **Cost Summary:** Displays how prizes are funded (typically participant fees) and any creator listing fee (if applicable).
-    *   Button: "Schedule Race" (checks Ticket balance if fee applies).
-    *   **UI:** `Form`, `TextField`, `Picker`, `DatePicker`, `Stepper`, `TextEditor`, `Button`.
+**3. My Races View (`MyRacesView`):** 
+*   **Section Picker:** `SegmentedPickerStyle` for "Upcoming" vs "In Progress"
+*   **Conditional Display:** Different card lists based on selection
+*   **UI:** `Picker` with segmented style, conditional `ScrollView` with `MyRaceCard` components
 
-**Race Detail View (`RaceDetailView` - Modal/Pushed):**
-*   **Trigger:** Tapping a race card from any list.
-*   **Content:** All race parameters, Participant List (Live races), Prize Structure, Rules.
-*   **Actions (Contextual):** "Join Race (X Tickets)" (confirms Ticket deduction), "View Lobby" (Live, pre-start), "Start Race Now" (Async, in window), "Edit/Cancel Race" (if user-created, pre-deadline).
-*   **UI:** `ScrollView`, `Text`, `List`, `Button`.
+**4. Create Race View (`CreateRaceView`):**
+*   **Form Structure:** Comprehensive race creation form in scrollable card
+*   **Fields:** Race Name (`TextField`), Mode (`Picker` - Duel/Regatta/Tournament), Format (`Picker` - Live/Async), Max Participants (`Stepper`), Workout Type (`Picker` - Distance/Time), Entry Fee (`Stepper`), Start Date (`DatePicker`), Description (`TextEditor`)
+*   **UI:** `ScrollView` with `CardView` containing form elements
+
+**Race Detail View (`RaceDetailView` - Modal):**
+*   **Trigger:** Tapping race cards from any section
+*   **Implementation:** Full-screen modal with comprehensive race information
+*   **Content Cards:**
+    1. **Race Header:** Name, mode, format, workout type, start time with "FEATURED" badge
+    2. **Participants:** Progress bar showing current/max participants with explanation text
+    3. **Prize Structure:** 1st/2nd/3rd place breakdown with ticket amounts and total pool
+    4. **Description:** Race details and rules
+*   **Join Functionality:** Entry fee display, join button with ticket validation, confirmation dialog
+*   **UI:** `NavigationView` with `ScrollView`, multiple `CardView` sections, `Button` interactions
 
 **Live Race View (`LiveRaceView`):**
 *   **Trigger:** Joining a live race at start, or from "My Races."
@@ -212,14 +266,42 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 **Goal:** Display leaderboards (global, regional, friends, groups) to motivate users.
 
 **Main View (`LeaderboardView`):**
-*   Tabbed interface/`SegmentedControl` for scopes: Global, Regional (user-set), Friends, Groups/Clubs.
-*   **Rank Tiers Display:** Visual of rank tiers (Bronze to Elite) with icons/badges. User's current rank tier highlighted.
-*   **Leaderboard List:** Users based on scope. Each row: Numerical Rank, Avatar, Username, Rank Tier (e.g., Gold III, derived from RP), and key PRs (e.g., 2k, 5k times). User's row always present and highlighted at the top.
-    *   Tap user navigates to their public Profile (simplified).
-    *   **UI:** `List`, `HStack` for rows, `Text`, `Image`.
-*   **Filtering/Sorting:** Filter by Rank Tier. Sort by Numerical Rank (default), RP. Future: specific metrics.
-    *   **UI:** `Menu`.
-*   Search bar (`.searchable`) to find users.
+*   **Implementation Status:** ✅ IMPLEMENTED - Full leaderboard functionality
+*   **Tab Selection:** `SegmentedPickerStyle` for scopes: "Global", "Regional", "Friends", "Groups"
+*   **Content Display:** `TabView` with `PageTabViewStyle` for scope switching
+*   **Current User Highlight:** User's rank prominently displayed at top of each leaderboard
+
+**Per Scope Implementation:**
+
+**1. Global Leaderboard (`GlobalLeaderboardView`):**
+*   **User Stats Summary:** Current user's rank, points, tier with avatar
+*   **Leaderboard List:** 50 users with rank number, avatar, username, tier badge, points
+*   **UI:** `ScrollView` with `LazyVStack` of user rank rows
+
+**2. Regional Leaderboard (`RegionalLeaderboardView`):**
+*   **Location Display:** Shows user's region (e.g., "North America")
+*   **Similar Structure:** User stats + regional rankings list
+*   **UI:** Identical to Global with regional data
+
+**3. Friends Leaderboard (`FriendsLeaderboardView`):**
+*   **Empty State:** "No friends added yet" with "Add Friends" button
+*   **Future:** Friend rankings when friend system implemented
+*   **UI:** Empty state message with call-to-action
+
+**4. Groups Leaderboard (`GroupsLeaderboardView`):**
+*   **Empty State:** "Join a group to compete" with "Find Groups" button  
+*   **Future:** Group/club competitions when group system implemented
+*   **UI:** Empty state message with call-to-action
+
+**Rank Tier System:**
+*   **Visual Badges:** Bronze, Silver, Gold, Platinum, Diamond, Elite tiers
+*   **Color Coding:** Each tier has distinct colors (bronze to blue/purple for elite)
+*   **Point Thresholds:** Defined point ranges for each tier progression
+
+**Sample Data:**
+*   **Realistic Users:** 50 sample users with varied usernames, realistic point distributions
+*   **Current User:** Integrated into leaderboard at appropriate rank position
+*   **Tier Distribution:** Balanced across all tiers for realistic competition feel
 
 ---
 
@@ -227,35 +309,98 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 
 **Goal:** View stats, history, manage account, configure settings.
 
-**Main Profile View (`ProfileView` - ScrollView with Cards/Sections):**
-*   **Sections:**
-    1.  **User Summary Card:** Avatar (editable), Username, Current Rank Tier (visual badge), Total "Tickets" balance. Button: "Edit Profile" (-> `EditProfileView`).
-    2.  **Key Performance Stats Card:** PBs (500m, 1k, 2k, 5k, 10k, 30min, 60min). Overall rowing summary (Total Distance/Time/Workouts).
-    3.  **Race History Section:** Link to `RaceHistoryView`. Summary of last few races (cards like in Race Tab).
-    4.  **Solo Workout History Section:** Link to `WorkoutLogView`. Summary of last few solo workouts (cards like in Train Tab).
-    5.  **Achievements/Badges Card (Future):** Earned milestone badges.
-    6.  **Settings & Store:** Button: "Settings" (-> `SettingsView`). Button: "Shop (Get More Tickets)" (-> `StoreView`).
+**Main Profile View (`ProfileView`):**
+*   **Implementation Status:** ✅ IMPLEMENTED - Full profile functionality with card-based layout
+*   **Structure:** `ScrollView` with multiple card sections
 
-**Edit Profile View (`EditProfileView` - Modal/Pushed):**
-*   Fields: Change Avatar (`PhotosPicker`), Username (if allowed, with checks), Email (read-only/confirm change), Change Password. Button: "Save Changes."
-*   **UI:** `Form`, `TextField`, `SecureField`, `Button`.
+**Card Sections Implementation:**
 
-**Race History View (`RaceHistoryView` - Navigated from Profile):**
-*   List of all completed races (cards). Shows Name, Date, User's Rank, Prize/RP change. Filters (Type, Date). Tap race for `RaceResultView`.
-*   **UI:** `List`, `Text`, `Menu`.
+**1. User Summary Card:**
+*   **Content:** User avatar, username ("Zarret"), current rank tier ("Gold III"), ticket balance
+*   **Edit Profile Button:** Opens `EditProfileView` (placeholder functionality)
+*   **UI:** `CardView` with avatar, stats grid, and action button
 
-**Solo Workout Log View (`WorkoutLogView` - Navigated from Profile):**
-*   List of all completed solo workouts (cards). Shows Date, Type, Key Metrics, Tickets Earned. Tap workout for its `WorkoutSummaryView`.
-*   **UI:** `List`, `Text`.
+**2. Personal Records Card:**
+*   **Metrics:** 500m, 1k, 2k, 5k, 10k, 30min, 60min personal bests
+*   **Display:** 2-column grid with metric names and times
+*   **Sample Data:** Realistic rowing times for each distance/duration
+*   **UI:** `LazyVGrid` with metric pairs
 
-**Settings View (`SettingsView` - Navigated from Profile):**
-*   `Form` with sections:
-    *   **Account:** Logout, Delete Account (with confirmation).
-    *   **PM5 Management:** Link to `PM5ConnectionView`. Option: auto-connect to last PM5.
-    *   **Notifications:** Toggles for Race Reminders, New Friend Activity, Event Announcements.
-    *   **Preferences:** Units (m/km/mi, lbs/kg - `Picker`/`SegmentedControl`). Theme (Light/Dark/System - `Picker`).
-    *   **Support & Legal:** Links to Help/FAQ, Privacy Policy, Terms of Service (web views). App Version.
-    *   **UI:** `Form`, `Section`, `Button`, `Toggle`, `Picker`, `NavigationLink`, `Text`.
+**3. Rowing Stats Card:**
+*   **Totals:** Total distance rowed, total time, total workouts, lifetime tickets earned
+*   **Progress Elements:** Visual progress indicators where relevant
+*   **UI:** Grid layout with icons and values
+
+**4. Workout History Section:**
+*   **Recent Workouts:** Last 5 workouts displayed as summary cards
+*   **"View Full History" Button:** Links to comprehensive `WorkoutHistoryView`
+*   **Workout Cards:** Show type, date, key metrics, tickets earned
+*   **UI:** `LazyVStack` of workout summary cards
+
+**5. Race History Section:**
+*   **Recent Races:** Last few completed races
+*   **"View All Races" Button:** Links to `RaceHistoryView`
+*   **Race Cards:** Show race name, placement, date, rewards earned
+*   **UI:** `LazyVStack` of race result cards
+
+**6. Achievements Section:**
+*   **Implementation:** Placeholder cards for future achievement system
+*   **Display:** Badge-style achievement cards with icons and descriptions
+*   **UI:** Horizontal scroll of achievement badges
+
+**7. Settings & Store Actions:**
+*   **Settings Button:** Links to `SettingsView`
+*   **Shop Button:** Links to `TicketStoreView` 
+*   **UI:** Action buttons at bottom of profile
+
+**Settings View (`SettingsView`):**
+*   **Implementation Status:** ✅ IMPLEMENTED - Comprehensive settings
+*   **Structure:** `Form` with organized sections
+
+**Settings Sections:**
+
+**1. Account Management:**
+*   **Logout Button:** Confirmation dialog before logout
+*   **Delete Account:** Warning dialog with account deletion
+*   **UI:** Destructive action buttons with confirmations
+
+**2. PM5 Connection:**
+*   **Connection Settings:** Link to PM5 pairing/management
+*   **Auto-connect Toggle:** Preference for automatic connection
+*   **UI:** Navigation link and toggle controls
+
+**3. Notifications:**
+*   **Toggle Controls:** Race reminders, friend activity, announcements
+*   **Implementation:** Individual `Toggle` controls for each notification type
+*   **UI:** Standard iOS toggle switches
+
+**4. Preferences:**
+*   **Units:** Distance (meters/kilometers/miles), Weight (kg/lbs)
+*   **Theme:** Light/Dark/System preference
+*   **UI:** `Picker` controls for unit and theme selection
+
+**5. Support & Legal:**
+*   **Help Links:** FAQ, Support contact
+*   **Legal Pages:** Privacy policy, Terms of service
+*   **App Info:** Version number display
+*   **UI:** Navigation links and informational text
+
+**Modal Views:**
+
+**Edit Profile View (`EditProfileView`):**
+*   **Fields:** Avatar selection, username editing, email (read-only), password change
+*   **Implementation:** Form-based editing with save/cancel actions
+*   **UI:** `Form` with appropriate input controls
+
+**Workout History View (`WorkoutHistoryView`):**
+*   **Full List:** All completed workouts with filtering options
+*   **Tap Action:** Opens `WorkoutSummaryView` for detailed metrics
+*   **UI:** Searchable list with workout cards
+
+**Race History View (`RaceHistoryView`):**
+*   **Race Results:** All completed races with outcomes
+*   **Filtering:** By race type, date range, results
+*   **UI:** List of race result cards with filter controls
 
 ---
 
@@ -311,3 +456,38 @@ Consistent application of these elements and principles is key.
 *   **Gauges (SwiftUI):** Visually engaging real-time metrics display.
 
 Adherence to these UX flows and UI principles will make Oarena functional, enjoyable, and motivating for rowers.
+
+---
+
+## 4. Implementation Status Summary
+
+### ✅ **FULLY IMPLEMENTED**
+*   **Home Tab:** Complete with all cards, navigation, and interactive elements
+*   **Train Tab:** Full workout setup, type selection, and parameter input
+*   **Race Tab:** Complete race hub with all sub-sections and detail view
+*   **Rankings Tab:** Full leaderboard system with all scopes
+*   **Profile Tab:** Complete profile and settings functionality
+*   **Navigation:** Cross-tab navigation and shared state management
+*   **Data Models:** UserData, WorkoutData with sample data
+*   **Components:** CardView, ticket counters, PM5 status indicators
+
+### 🚧 **PLACEHOLDER/FUTURE IMPLEMENTATION**
+*   **User Authentication:** Login/Registration system (UI flows defined)
+*   **PM5 Bluetooth Integration:** Real CSAFE commands and data (structure defined)
+*   **Live Race Functionality:** Real-time racing with other users
+*   **Workout In Progress:** Real-time PM5 data display during workouts
+*   **Backend Integration:** Server communication for races, rankings
+*   **Friend System:** Adding/managing friends for leaderboards
+*   **Group/Club System:** Team-based competitions
+*   **Achievement System:** Milestone badges and rewards
+*   **In-App Purchases:** Real ticket purchasing via Apple IAP
+
+### 📱 **UI/UX CONSISTENCY**
+All implemented views follow the design principles outlined in this document:
+*   Card-based UI with consistent styling
+*   Oarena color scheme throughout
+*   SF Symbols for icons
+*   Native iOS SwiftUI components
+*   Proper navigation and back button support
+*   Ticket counter consistency across tabs
+*   Interactive elements with proper feedback

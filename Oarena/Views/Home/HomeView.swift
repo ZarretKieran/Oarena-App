@@ -9,8 +9,14 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject private var userData = UserData.shared
+    @EnvironmentObject var tabSwitcher: TabSwitcher
     @State private var showingWorkoutHistory = false
     @State private var showingTicketStore = false
+    @State private var showingRaceDetail = false
+    @State private var selectedWorkout: WorkoutData?
+    @State private var showingWorkoutDetail = false
+    
+    let recentWorkouts = Array(WorkoutData.sampleWorkouts.prefix(4)) // Show first 4 workouts
     
     var body: some View {
         NavigationView {
@@ -83,7 +89,9 @@ struct HomeView: View {
                             
                             HStack(spacing: 12) {
                                 Button(action: {
-                                    // Navigate to solo row
+                                    // Navigate to Train tab and pre-fill "Just Row" (index 0)
+                                    userData.setWorkoutType(0)
+                                    tabSwitcher.switchToTab(1)
                                 }) {
                                     HStack {
                                         Image(systemName: "figure.rowing")
@@ -99,7 +107,8 @@ struct HomeView: View {
                                 }
                                 
                                 Button(action: {
-                                    // Navigate to find race
+                                    // Navigate to Race tab
+                                    tabSwitcher.switchToTab(2)
                                 }) {
                                     HStack {
                                         Image(systemName: "flag.checkered")
@@ -129,6 +138,9 @@ struct HomeView: View {
                                 HStack(spacing: 12) {
                                     ForEach(0..<3) { index in
                                         RacePreviewCard()
+                                            .onTapGesture {
+                                                showingRaceDetail = true
+                                            }
                                     }
                                 }
                                 .padding(.horizontal, 4)
@@ -137,34 +149,31 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Recent Activity Card
+                    // Recent Workouts Cards
                     CardView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Recent Activity")
-                                .font(.headline)
-                                .foregroundColor(.oarenaPrimary)
-                            
+                        VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                VStack(alignment: .leading) {
-                                    Text("Last Row")
-                                        .font(.caption)
-                                        .foregroundColor(.oarenaSecondary)
-                                    Text("5000m • 20:00")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.oarenaPrimary)
-                                    Text("Avg Split: 1:45/500m")
-                                        .font(.caption)
-                                        .foregroundColor(.oarenaSecondary)
-                                }
+                                Text("Recent Workouts")
+                                    .font(.headline)
+                                    .foregroundColor(.oarenaPrimary)
                                 
                                 Spacer()
                                 
-                                Button("View History") {
+                                Button("View All") {
                                     showingWorkoutHistory = true
                                 }
                                 .font(.caption)
                                 .foregroundColor(.oarenaAccent)
+                            }
+                            
+                            LazyVStack(spacing: 12) {
+                                ForEach(recentWorkouts) { workout in
+                                    WorkoutCard(workout: workout)
+                                        .onTapGesture {
+                                            selectedWorkout = workout
+                                            showingWorkoutDetail = true
+                                        }
+                                }
                             }
                         }
                     }
@@ -204,6 +213,78 @@ struct HomeView: View {
         .sheet(isPresented: $showingTicketStore) {
             TicketStoreView()
         }
+        .sheet(isPresented: $showingRaceDetail) {
+            RaceDetailView()
+        }
+        .sheet(isPresented: $showingWorkoutDetail) {
+            if let workout = selectedWorkout {
+                WorkoutSummaryView(
+                    workoutType: workout.workoutType,
+                    date: workout.date,
+                    totalTime: workout.totalTime,
+                    distance: workout.distance,
+                    avgPace: workout.avgPace,
+                    avgPower: workout.avgPower,
+                    avgSPM: workout.avgSPM,
+                    maxHeartRate: workout.maxHeartRate,
+                    calories: workout.calories,
+                    ticketsEarned: workout.ticketsEarned,
+                    rankPointsGained: workout.rankPointsGained
+                )
+            }
+        }
+    }
+}
+
+struct WorkoutCard: View {
+    let workout: WorkoutData
+    
+    var body: some View {
+        HStack {
+            // Workout icon
+            Circle()
+                .fill(Color.oarenaAccent.opacity(0.2))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "figure.rowing")
+                        .foregroundColor(.oarenaAccent)
+                        .font(.caption)
+                )
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(workout.workoutType)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.oarenaPrimary)
+                
+                Text(workout.summary)
+                    .font(.caption)
+                    .foregroundColor(.oarenaSecondary)
+                
+                Text(workout.timeAgo)
+                    .font(.caption)
+                    .foregroundColor(.oarenaSecondary)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: "ticket.fill")
+                        .foregroundColor(.oarenaAction)
+                        .font(.caption)
+                    Text("\(workout.ticketsEarned)")
+                        .font(.caption)
+                        .foregroundColor(.oarenaSecondary)
+                }
+                
+                Text("Tickets")
+                    .font(.caption2)
+                    .foregroundColor(.oarenaSecondary)
+            }
+        }
+        .padding(.vertical, 8)
+        .contentShape(Rectangle()) // Makes entire card tappable
     }
 }
 

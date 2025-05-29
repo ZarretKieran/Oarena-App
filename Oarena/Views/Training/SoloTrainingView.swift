@@ -9,7 +9,6 @@ import SwiftUI
 
 struct SoloTrainingView: View {
     @ObservedObject private var userData = UserData.shared
-    @State private var selectedWorkoutType = 0
     @State private var distance = ""
     @State private var time = ""
     @State private var intervalDistance = ""
@@ -52,24 +51,24 @@ struct SoloTrainingView: View {
                                             title: "Just Row",
                                             subtitle: "Open rowing",
                                             index: 0,
-                                            selectedIndex: selectedWorkoutType,
-                                            action: { selectedWorkoutType = 0 }
+                                            selectedIndex: userData.selectedWorkoutType,
+                                            action: { userData.setWorkoutType(0) }
                                         )
                                         
                                         WorkoutTypeButton(
                                             title: "Single Distance",
                                             subtitle: "Set meters",
                                             index: 1,
-                                            selectedIndex: selectedWorkoutType,
-                                            action: { selectedWorkoutType = 1 }
+                                            selectedIndex: userData.selectedWorkoutType,
+                                            action: { userData.setWorkoutType(1) }
                                         )
                                         
                                         WorkoutTypeButton(
                                             title: "Single Time",
                                             subtitle: "Set duration",
                                             index: 2,
-                                            selectedIndex: selectedWorkoutType,
-                                            action: { selectedWorkoutType = 2 }
+                                            selectedIndex: userData.selectedWorkoutType,
+                                            action: { userData.setWorkoutType(2) }
                                         )
                                     }
                                     
@@ -81,16 +80,16 @@ struct SoloTrainingView: View {
                                             title: "Intervals: Distance",
                                             subtitle: "Distance sets",
                                             index: 3,
-                                            selectedIndex: selectedWorkoutType,
-                                            action: { selectedWorkoutType = 3 }
+                                            selectedIndex: userData.selectedWorkoutType,
+                                            action: { userData.setWorkoutType(3) }
                                         )
                                         
                                         WorkoutTypeButton(
                                             title: "Intervals: Time",
                                             subtitle: "Time sets",
                                             index: 4,
-                                            selectedIndex: selectedWorkoutType,
-                                            action: { selectedWorkoutType = 4 }
+                                            selectedIndex: userData.selectedWorkoutType,
+                                            action: { userData.setWorkoutType(4) }
                                         )
                                         
                                         Spacer()
@@ -99,7 +98,7 @@ struct SoloTrainingView: View {
                             }
                             
                             // Parameters based on workout type
-                            if selectedWorkoutType == 1 { // Single Distance
+                            if userData.selectedWorkoutType == 1 { // Single Distance
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Distance (meters)")
                                         .font(.subheadline)
@@ -110,7 +109,7 @@ struct SoloTrainingView: View {
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .keyboardType(.numberPad)
                                 }
-                            } else if selectedWorkoutType == 2 { // Single Time
+                            } else if userData.selectedWorkoutType == 2 { // Single Time
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Time (minutes)")
                                         .font(.subheadline)
@@ -121,7 +120,7 @@ struct SoloTrainingView: View {
                                         .textFieldStyle(RoundedBorderTextFieldStyle())
                                         .keyboardType(.numberPad)
                                 }
-                            } else if selectedWorkoutType == 3 { // Intervals: Distance
+                            } else if userData.selectedWorkoutType == 3 { // Intervals: Distance
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Interval Configuration")
                                         .font(.subheadline)
@@ -157,7 +156,7 @@ struct SoloTrainingView: View {
                                         }
                                     }
                                 }
-                            } else if selectedWorkoutType == 4 { // Intervals: Time
+                            } else if userData.selectedWorkoutType == 4 { // Intervals: Time
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Interval Configuration")
                                         .font(.subheadline)
