@@ -54,6 +54,7 @@ struct MainTabView: View {
 
 class TabSwitcher: ObservableObject {
     @Binding var selectedTab: Int
+    @Published var raceTabIndex: Int = 0
     
     init(selectedTab: Binding<Int>) {
         self._selectedTab = selectedTab
@@ -61,5 +62,10 @@ class TabSwitcher: ObservableObject {
     
     func switchToTab(_ tab: Int) {
         selectedTab = tab
+    }
+    
+    func switchToRaceTab(section: Int = 0) {
+        raceTabIndex = section
+        selectedTab = 2 // Race tab
     }
 } 

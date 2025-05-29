@@ -432,6 +432,162 @@ This comprehensive filter system transforms the All Races section into a powerfu
 
 This comprehensive redesign transforms both the Create Race and Filter interfaces from basic forms into professional, engaging interfaces that match the polish of the race discovery system while significantly improving usability and visual appeal.
 
+### **Enhanced Race Configuration Interface (NEW)**
+**Implementation**: Redesigned race mode and format selection with intuitive button-based UI
+- **Interactive Race Mode Selection**: Replaced segmented picker with 3 descriptive buttons (Duel: 1v1 Race, Regatta: Multi-boat, Tournament: Bracket style)
+- **Interactive Race Format Selection**: Replaced segmented picker with 2 clear buttons (Live: Real-time, Asynchronous: Time window)
+- **Conditional Participant Settings**: Max participants field automatically hidden for Duels since they're always 1v1
+- **Smart Prize Pool Calculation**: Dynamic calculation using 2 participants for Duels, max participants for other modes
+- **Educational Context**: Informational card explaining Duel race mechanics when selected
+- **Color-Coded Selection**: Race modes use highlight color, formats use action color, workout types use accent color for visual distinction
+
+### **Comprehensive Workout Setup Integration (NEW)**
+
+### **Comprehensive Race Timing System (NEW)**
+**Implementation**: Dynamic timing interface that adapts to race format requirements
+- **Live Race Timing**: Single start time picker for synchronized race start across all participants
+- **Async Race Timing**: Dual timing system with opening time (when submissions begin) and closing deadline (final submission cutoff)
+- **Contextual Interface**: Timing fields automatically change based on selected race format (Live vs Asynchronous)
+- **Smart Validation**: Ensures future dates for live races, proper time windows for async races (closing after opening)
+- **Format-Specific Explanations**: Color-coded info cards explaining timing mechanics for each format
+- **Logical Time Windows**: Default 24-hour window for async races with customizable opening and closing times
+- **Color Coordination**: Live race elements use highlight color, async elements use action color for visual distinction
+
+### **Functional Race Creation System (NEW)**
+**Implementation**: Complete race creation workflow allowing users to create and participate in their own races
+- **Comprehensive Race Builder**: Transforms form data into fully functional RaceData objects with all necessary properties
+- **Intelligent Workout Description**: Automatically generates descriptive workout titles from parameters (e.g., "2000m Row", "5x500m Intervals", "20:00 Time Trial")
+- **Smart Participant Logic**: Uses 2 participants for Duels, maxParticipants for Regatta/Tournament modes
+- **Prize Pool Calculation**: Automatically calculates total prize pool (entry fee × participant count)
+- **Global Race Integration**: Created races immediately appear in All Races section for discovery by other users
+- **Creator Auto-Join**: Race creators are automatically enrolled as participants in their own races
+- **My Races Integration**: Created races appear in user's My Races section since creator is automatically a participant
+- **Success Feedback**: Professional success alert with race title confirmation and reset functionality
+- **Form Reset**: Complete form clearing after successful race creation for immediate new race setup
+- **Unique Race IDs**: UUID-based race identification ensuring no conflicts with existing races
+- **Realistic Data Integration**: Created races have proper timing, rank requirements, and format specifications matching existing race standards
+- **Enhanced Validation System**: Flexible workout validation accepting multiple input formats (minutes only, seconds only, or both) with 30-minute minimum scheduling buffer
+- **User-Friendly Timing Requirements**: Clear messaging informing users that races must be scheduled at least 30 minutes in advance for participant discovery and joining
+
+### **Technical Implementation Details**
+- **State Management**: Enhanced CreateRaceView with success alert states and form reset functionality
+- **Data Persistence**: New races added to RaceData.sampleAllRaces for immediate global visibility (modified to static var for mutability)
+- **User Integration**: Creator automatically added to UserData.shared.joinedRaces using full RaceData objects for seamless My Races experience
+- **Validation Integration**: Race creation only permitted when all required fields are completed and timing is valid
+- **Error Handling**: Robust input validation ensuring created races have complete and logical configurations
+- **Date Formatting**: Proper Date to String conversion for timing display using DateFormatter with medium date and short time styles
+- **Parameter Mapping**: Correct RaceData initializer parameter order ensuring all required fields are properly populated
+- **Data Model Compliance**: Full integration with existing RaceData structure including status, timing, and participant tracking
+
+### **User Experience Flow**
+1. **Race Configuration**: User configures all race parameters using enhanced card-based interface
+2. **Validation Feedback**: Real-time validation with visual button state indicating completion status
+3. **Race Creation**: Single tap creates race, adds to global list, and enrolls creator as participant
+4. **Success Confirmation**: Professional alert confirms race creation with title
+5. **Form Reset**: Automatic form clearing for immediate next race creation
+6. **Discovery**: Created race immediately visible in All Races with full search/filter functionality
+7. **Management**: Created race accessible through My Races for ongoing management and participation
+
+### **Enhanced Validation System & User Experience (NEW)**
+**Implementation**: Improved race creation validation and user feedback system
+- **Enhanced Validation System**: Flexible workout validation accepting multiple input formats (minutes only, seconds only, or both) with 30-minute minimum scheduling buffer
+- **User-Friendly Timing Requirements**: Clear messaging informing users that races must be scheduled at least 30 minutes in advance for participant discovery and joining
+- **Real-Time Validation Feedback**: Professional button state management with opacity changes indicating form completion status
+- **Contextual Help Messages**: Informative cards explaining Live vs Async race timing requirements and constraints
+- **Keyboard Dismissal**: Universal keyboard dismissal functionality with tap-outside-to-dismiss and swipe-down-to-dismiss gestures for improved text input experience across Create Race and Training sections
+
+### **Owner Badge System (NEW)**
+**Implementation**: Distinguished badge system differentiating race creators from participants
+- **OWNER Badge Display**: Races created by the user show prominent "OWNER" badge with highlight color (distinct from "JOINED")
+- **JOINED Badge Display**: Races the user joined but didn't create show "JOINED" badge with accent color
+- **UserData Race Tracking**: Enhanced user data model tracks both `joinedRaces` and `createdRaces` for proper relationship management
+- **Status Differentiation**: `RaceUserStatus` enum providing clear states: `.notJoined`, `.joined`, `.owner`
+- **Universal Badge Support**: Consistent badge system across all race card types (Featured, All Races, Home Preview, My Races)
+- **Visual Distinction**: Owner badges use highlight color for prominence, joined badges use accent color for secondary status
+- **Race Management**: Race creators automatically tracked when creating races, enabling proper ownership display throughout app
+- **Maintained Accessibility**: All race cards remain tappable for viewing details regardless of join status, ensuring users can always access race information for reference
+
+## ✅ **Version 1.11 - Compilation Fixes, Enhanced UX & Navigation (COMPLETED)**
+
+### **Critical Compilation Error Resolution**
+**Implementation**: Resolved blocking compilation errors preventing app build and testing
+- **DragGesture Translation Fix**: Corrected `dragValue.translation.y` to `dragValue.translation.height` in RaceHubView.swift:1208
+  - Root cause: DragGesture.Value.translation returns CGSize (with .height), not CGPoint (with .y)
+  - Applied fix across all drag gesture implementations for consistency
+- **MyJoinedRaceCard Cleanup**: Removed erroneous `hasJoined` variable references in lines 1899 and 1901
+  - These were remnants from refactoring since MyJoinedRaceCard only displays already-joined races
+  - Eliminated redundant conditional logic that was causing compilation failures
+- **Parameter Naming Consistency**: Standardized drag gesture parameter naming from `value` to `dragValue` for clarity
+
+### **Enhanced Keyboard Dismissal System**
+**Implementation**: Comprehensive keyboard dismissal functionality across all text input interfaces
+- **Universal hideKeyboard() Function**: Added shared keyboard dismissal using `UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder))`
+- **Tap-Outside-to-Dismiss**: Implemented background tap gestures that detect clicks outside text fields
+- **Swipe-Down-to-Dismiss**: Added downward swipe gesture recognition with 50px minimum threshold for intentional dismissal
+- **Targeted Implementation**: Applied to all views with text input:
+  - **AllRacesView**: Search bar keyboard dismissal for race discovery
+  - **CreateRaceView**: Form field keyboard management for race creation  
+  - **SoloTrainingView**: Training parameter input keyboard handling
+- **Smart Gesture Logic**: Gestures only active on views containing active text input fields
+
+### **Home Screen "Your Upcoming Races" Enhancement**
+**Implementation**: Prominent upcoming races card matching Featured races styling and functionality
+- **Conditional Display**: Card only appears when user has upcoming joined races (`!userData.upcomingJoinedRaces.isEmpty`)
+- **Consistent Styling**: Matches Featured races card design with identical typography, spacing, and layout
+- **Data Integration**: Uses `userData.upcomingJoinedRaces` with 5-race limit (`Array(userData.upcomingJoinedRaces.prefix(5))`)
+- **Required Heading**: Displays "Your upcoming races" as specified for clear section identification
+- **Navigation Integration**: "View All" button uses enhanced TabSwitcher navigation to My Races section
+- **Horizontal Scroll Layout**: Identical to Featured races with `RacePreviewCard` components for visual consistency
+- **Strategic Placement**: Positioned after Featured races section to promote user's committed races
+
+### **Enhanced TabSwitcher Navigation System**
+**Implementation**: Extended tab navigation to support sub-section targeting within tabs
+- **RaceTab Section Control**: Added `@Published var raceTabIndex: Int = 0` to TabSwitcher for race section tracking
+- **Enhanced Navigation Method**: New `switchToRaceTab(section: Int = 0)` method for precise section targeting
+  - Method simultaneously sets target race section and switches to Race tab (index 2)
+  - Supports navigation to specific sections: Featured (0), All Races (1), My Races (2), Create Race (3)
+- **RaceHubView Integration**: 
+  - Removed local `selectedTab` state variable to prevent navigation conflicts
+  - Added `@EnvironmentObject var tabSwitcher: TabSwitcher` for global navigation control
+  - Picker and TabView now bind to `tabSwitcher.raceTabIndex` for consistent state management
+- **HomeView Navigation Enhancement**: 
+  - Updated "View All" button from generic `tabSwitcher.switchToTab(2)` to precise `tabSwitcher.switchToRaceTab(section: 2)`
+  - Enables direct navigation to My Races section (index 2) rather than default Featured races
+
+### **Join Race Button Standardization**
+**Implementation**: Unified join button styling and behavior across all race detail views for consistent user experience
+- **Simplified Color Logic**: Eliminated inconsistent gray styling for insufficient tickets
+  - **Eligible Races**: Consistent accent color gradient (green) for all joinable races
+  - **Ineligible Races**: Unified red gradient for all rejection cases (rank requirements, insufficient tickets, etc.)
+- **Enhanced Visual Treatment**:
+  - **Background**: LinearGradient with color-matched shadows for depth
+  - **Eligible**: Accent gradient with prominent 8px shadow in accent color at 0.3 opacity
+  - **Ineligible**: Red gradient with subtle 4px shadow in red color at 0.2 opacity
+- **Typography Enhancement**: Changed font weight to `.semibold` for improved readability and prominence
+- **Opacity States**: Eligible buttons at full opacity (1.0), ineligible at 0.8 for clear disabled indication
+- **Code Cleanup**: Removed unused `joinButtonColor` computed property and consolidated all styling logic
+- **Icon Consistency**: Maintained existing logic for status-based icon selection (`play.fill` for live, `person.badge.plus` for upcoming)
+- **Button Text Logic**: Preserved existing dynamic text system ("Join Race Now" for live races, error messages for ineligible states)
+
+### **User Experience Improvements**
+- **Build Stability**: Resolved all compilation errors enabling smooth development and testing workflow
+- **Input Efficiency**: Universal keyboard dismissal reduces friction in form interactions
+- **Race Discovery**: Enhanced home screen promotes user's committed races while maintaining Featured race prominence
+- **Navigation Precision**: Specific section targeting improves workflow efficiency for race management
+- **Visual Consistency**: Standardized join button treatment eliminates user confusion about race eligibility
+- **Accessibility**: Consistent visual feedback for button states and clear keyboard dismissal options
+
+### **Technical Implementation Details**
+- **Error Resolution**: Applied DragGesture syntax corrections and cleaned redundant variable references
+- **State Management**: Extended TabSwitcher with race section control while maintaining backward compatibility
+- **Component Reuse**: Leveraged existing RacePreviewCard components for consistent upcoming races display
+- **Conditional UI**: Smart display logic for upcoming races card based on user's joined race status
+- **Gesture Recognition**: Implemented proper gesture conflict resolution for keyboard dismissal
+- **Button Styling**: Consolidated visual styling logic using LinearGradient and shadow combinations
+- **Data Binding**: Enhanced navigation state synchronization between HomeView and RaceHubView components
+
+This comprehensive update resolves critical compilation issues while significantly enhancing user experience through improved keyboard handling, strategic race promotion, precise navigation control, and consistent visual design language throughout the racing system.
+
 ## 🚧 NEXT PHASE - Backend Integration & Functionality
 
 ### Authentication System

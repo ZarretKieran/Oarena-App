@@ -95,49 +95,108 @@ struct LeaderboardView: View {
 
 struct RankTiersDisplay: View {
     let rankTiers = [
-        ("Bronze", Color.orange, "B"),
-        ("Silver", Color.gray, "S"),
-        ("Gold", Color.yellow, "G"),
-        ("Platinum", Color.blue, "P"),
-        ("Elite", Color.purple, "E")
+        ("Bronze", Color.orange, "shield.fill"),
+        ("Silver", Color.gray, "star.fill"),
+        ("Gold", Color.yellow, "crown.fill"),
+        ("Platinum", Color.blue, "diamond.fill"),
+        ("Elite", Color.purple, "flame.fill")
     ]
+    
+    // Get user's current rank and division from UserData
+    @ObservedObject private var userData = UserData.shared
+    
+    private var currentRankIndex: Int {
+        let baseRank = userData.baseRank
+        return rankTiers.firstIndex { $0.0 == baseRank } ?? 2
+    }
+    
+    private var currentDivision: String? {
+        // Extract division from currentRank (e.g., "Gold III" -> "III")
+        let components = userData.currentRank.components(separatedBy: " ")
+        return components.count > 1 ? components[1] : nil
+    }
     
     var body: some View {
         CardView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(spacing: 16) {
                 Text("Rank Tiers")
                     .font(.headline)
+                    .fontWeight(.semibold)
                     .foregroundColor(.oarenaPrimary)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
-                        ForEach(0..<rankTiers.count, id: \.self) { index in
-                            let tier = rankTiers[index]
-                            VStack(spacing: 8) {
+                HStack(spacing: 0) {
+                    ForEach(0..<rankTiers.count, id: \.self) { index in
+                        let tier = rankTiers[index]
+                        let isCurrentRank = (index == currentRankIndex)
+                        let circleSize: CGFloat = isCurrentRank ? 65 : 45
+                        let ringSize: CGFloat = isCurrentRank ? 75 : 55
+                        
+                        VStack(spacing: 8) {
+                            ZStack {
+                                // Main rank circle
                                 Circle()
                                     .fill(tier.1)
-                                    .frame(width: 40, height: 40)
+                                    .frame(width: circleSize, height: circleSize)
                                     .overlay(
-                                        Text(tier.2)
-                                            .font(.headline)
+                                        Image(systemName: tier.2)
+                                            .font(isCurrentRank ? .title2 : .title3)
                                             .fontWeight(.bold)
                                             .foregroundColor(.white)
                                     )
-                                    .overlay(
-                                        Circle()
-                                            .stroke(index == 2 ? Color.oarenaHighlight : Color.clear, lineWidth: 3) // Highlight Gold (current user)
-                                    )
                                 
-                                Text(tier.0)
-                                    .font(.caption)
-                                    .fontWeight(index == 2 ? .bold : .medium) // Bold for current tier
-                                    .foregroundColor(index == 2 ? .oarenaHighlight : .oarenaSecondary)
+                                // Current rank indicator ring (with proper spacing)
+                                if isCurrentRank {
+                                    Circle()
+                                        .stroke(Color.oarenaHighlight, lineWidth: 4)
+                                        .frame(width: ringSize, height: ringSize)
+                                }
+                            }
+                            
+                            // Rank name
+                            Text(tier.0)
+                                .font(.caption)
+                                .fontWeight(isCurrentRank ? .bold : .medium)
+                                .foregroundColor(isCurrentRank ? .oarenaHighlight : .oarenaSecondary)
+                                .multilineTextAlignment(.center)
+                            
+                            // Division indicator (only for current rank and non-Elite ranks)
+                            if isCurrentRank && tier.0 != "Elite" {
+                                VStack(spacing: 4) {
+                                    // Division dots
+                                    HStack(spacing: 3) {
+                                        ForEach(1...3, id: \.self) { divisionNumber in
+                                            let isCurrentDivision = currentDivision == romanNumeral(for: divisionNumber)
+                                            Circle()
+                                                .fill(isCurrentDivision ? Color.oarenaHighlight : Color.oarenaSecondary.opacity(0.3))
+                                                .frame(width: isCurrentDivision ? 8 : 6, height: isCurrentDivision ? 8 : 6)
+                                        }
+                                    }
+                                    
+                                    // Division text
+                                    if let division = currentDivision {
+                                        Text("Division \(division)")
+                                            .font(.caption2)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.oarenaHighlight)
+                                    }
+                                }
                             }
                         }
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal, 4)
                 }
+                .padding(.horizontal, 8)
             }
+        }
+    }
+    
+    private func romanNumeral(for number: Int) -> String {
+        switch number {
+        case 1: return "I"
+        case 2: return "II"
+        case 3: return "III"
+        default: return ""
         }
     }
 }

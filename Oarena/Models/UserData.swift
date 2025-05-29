@@ -7,11 +7,18 @@
 
 import SwiftUI
 
+enum RaceUserStatus {
+    case notJoined
+    case joined 
+    case owner
+}
+
 class UserData: ObservableObject {
     @Published var ticketCount: Int = 150
     @Published var username: String = "Zarret"
     @Published var currentRank: String = "Gold III"
     @Published var joinedRaces: [RaceData] = [] // Track joined races
+    @Published var createdRaces: [String] = [] // Track race IDs that user created
     
     // Navigation state
     @Published var selectedWorkoutType: Int = 0 // For training tab pre-fill
@@ -108,5 +115,27 @@ class UserData: ObservableObject {
             return "This race is open to all ranks."
         }
         return "Requires \(requiredRank)+ rank. You are currently \(currentRank)."
+    }
+    
+    // Race creation tracking
+    func addCreatedRace(_ raceId: String) {
+        if !createdRaces.contains(raceId) {
+            createdRaces.append(raceId)
+        }
+    }
+    
+    func hasCreatedRace(_ raceId: String) -> Bool {
+        return createdRaces.contains(raceId)
+    }
+    
+    // Check if user is owner vs just joined
+    func getUserRaceStatus(_ raceId: String) -> RaceUserStatus {
+        if hasCreatedRace(raceId) {
+            return .owner
+        } else if hasJoinedRace(raceId) {
+            return .joined
+        } else {
+            return .notJoined
+        }
     }
 } 

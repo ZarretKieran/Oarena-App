@@ -9,9 +9,12 @@ import SwiftUI
 
 struct RaceHubView: View {
     @ObservedObject private var userData = UserData.shared
-    @State private var selectedTab = 0
+    @EnvironmentObject var tabSwitcher: TabSwitcher
     @State private var isPM5Connected = false
     @State private var showingTicketStore = false
+    @State private var rankRequirement = 0
+    @State private var showingSuccessAlert = false
+    @State private var createdRaceTitle = ""
     
     var body: some View {
         NavigationView {
@@ -22,7 +25,7 @@ struct RaceHubView: View {
                     .padding(.bottom, 16)
                 
                 // Tab Selection
-                Picker("Race Section", selection: $selectedTab) {
+                Picker("Race Section", selection: $tabSwitcher.raceTabIndex) {
                     Text("Featured").tag(0)
                     Text("All Races").tag(1)
                     Text("My Races").tag(2)
@@ -33,7 +36,7 @@ struct RaceHubView: View {
                 .padding(.bottom, 16)
                 
                 // Content based on selected tab
-                TabView(selection: $selectedTab) {
+                TabView(selection: $tabSwitcher.raceTabIndex) {
                     FeaturedRacesView()
                         .tag(0)
                     
@@ -85,20 +88,43 @@ struct FeaturedRacesView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(RaceData.sampleFeaturedRaces) { race in
-                    FeaturedRaceCard(race: race)
-                        .padding(.horizontal)
-                        .onTapGesture {
-                            // Only allow tapping if user hasn't joined the race
-                            if !userData.hasJoinedRace(race.id) {
+            VStack(spacing: 16) {
+                // Header Card
+                CardView(backgroundColor: Color.oarenaAccent.opacity(0.05)) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.oarenaHighlight)
+                            
+                            VStack(alignment: .leading) {
+                                Text("Featured Races")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.oarenaPrimary)
+                                
+                                Text("Discover the best races")
+                                    .font(.subheadline)
+                                    .foregroundColor(.oarenaSecondary)
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                
+                LazyVStack(spacing: 16) {
+                    ForEach(RaceData.sampleFeaturedRaces) { race in
+                        FeaturedRaceCard(race: race)
+                            .padding(.horizontal)
+                            .onTapGesture {
                                 selectedRace = race
                                 showingRaceDetail = true
                             }
-                        }
+                    }
                 }
             }
-            .padding(.top)
         }
         .sheet(isPresented: $showingRaceDetail) {
             if let race = selectedRace {
@@ -291,11 +317,8 @@ struct AllRacesView: View {
                         RaceListCard(race: race)
                             .padding(.horizontal)
                             .onTapGesture {
-                                // Only allow tapping if user hasn't joined the race
-                                if !userData.hasJoinedRace(race.id) {
-                                    selectedRace = race
-                                    showingRaceDetail = true
-                                }
+                                selectedRace = race
+                                showingRaceDetail = true
                             }
                     }
                 }
@@ -318,6 +341,19 @@ struct AllRacesView: View {
                 RaceDetailView(race: race)
             }
         }
+        .onTapGesture {
+            // Dismiss keyboard when tapping outside search field
+            hideKeyboard()
+        }
+        .gesture(
+            DragGesture()
+                .onEnded { dragValue in
+                    // Dismiss keyboard when swiping down
+                    if dragValue.translation.height > 50 {
+                        hideKeyboard()
+                    }
+                }
+        )
     }
     
     private var hasActiveFilters: Bool {
@@ -354,6 +390,11 @@ struct AllRacesView: View {
         entryFeeRange = 0...200
         onlyShowAvailable = false
         sortBy = "Featured First"
+    }
+    
+    // Function to dismiss keyboard
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
@@ -471,8 +512,12 @@ struct CreateRaceView: View {
     @State private var intervalCount = ""
     @State private var entryFee = 25
     @State private var startDate = Date()
+    @State private var asyncOpeningTime = Date()
+    @State private var asyncClosingTime = Date().addingTimeInterval(24 * 60 * 60) // 24 hours later
     @State private var raceDescription = ""
     @State private var rankRequirement = 0
+    @State private var showingSuccessAlert = false
+    @State private var createdRaceTitle = ""
     
     let raceModes = ["Duel", "Regatta", "Tournament"]
     let raceFormats = ["Live", "Asynchronous"]
@@ -568,12 +613,32 @@ struct CreateRaceView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(.oarenaSecondary)
                             
-                            Picker("Mode", selection: $selectedMode) {
-                                ForEach(0..<raceModes.count, id: \.self) { index in
-                                    Text(raceModes[index]).tag(index)
-                                }
+                            // Race Mode Buttons
+                            HStack(spacing: 12) {
+                                RaceModeButton(
+                                    title: "Duel",
+                                    subtitle: "1v1 Race",
+                                    index: 0,
+                                    selectedIndex: selectedMode,
+                                    action: { selectedMode = 0 }
+                                )
+                                
+                                RaceModeButton(
+                                    title: "Regatta",
+                                    subtitle: "Multi-boat",
+                                    index: 1,
+                                    selectedIndex: selectedMode,
+                                    action: { selectedMode = 1 }
+                                )
+                                
+                                RaceModeButton(
+                                    title: "Tournament",
+                                    subtitle: "Bracket style",
+                                    index: 2,
+                                    selectedIndex: selectedMode,
+                                    action: { selectedMode = 2 }
+                                )
                             }
-                            .pickerStyle(SegmentedPickerStyle())
                         }
                         
                         VStack(alignment: .leading, spacing: 12) {
@@ -582,38 +647,71 @@ struct CreateRaceView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(.oarenaSecondary)
                             
-                            Picker("Format", selection: $selectedFormat) {
-                                ForEach(0..<raceFormats.count, id: \.self) { index in
-                                    Text(raceFormats[index]).tag(index)
-                                }
-                            }
-                            .pickerStyle(SegmentedPickerStyle())
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Maximum Participants")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.oarenaSecondary)
-                            
-                            HStack {
-                                Stepper("", value: $maxParticipants, in: 2...50, step: 1)
-                                    .labelsHidden()
+                            // Race Format Buttons
+                            HStack(spacing: 12) {
+                                RaceFormatButton(
+                                    title: "Live",
+                                    subtitle: "Real-time",
+                                    index: 0,
+                                    selectedIndex: selectedFormat,
+                                    action: { selectedFormat = 0 }
+                                )
                                 
-                                HStack {
-                                    Image(systemName: "person.2.fill")
-                                        .foregroundColor(.oarenaAccent)
-                                    Text("\(maxParticipants) participants")
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.oarenaPrimary)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.oarenaAccent.opacity(0.1))
-                                .cornerRadius(8)
+                                RaceFormatButton(
+                                    title: "Asynchronous",
+                                    subtitle: "Time window",
+                                    index: 1,
+                                    selectedIndex: selectedFormat,
+                                    action: { selectedFormat = 1 }
+                                )
                                 
                                 Spacer()
                             }
+                        }
+                        
+                        // Max Participants (hidden for Duels)
+                        if selectedMode != 0 {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Maximum Participants")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.oarenaSecondary)
+                                
+                                HStack {
+                                    Stepper("", value: $maxParticipants, in: 3...50, step: 1)
+                                        .labelsHidden()
+                                    
+                                    HStack {
+                                        Image(systemName: "person.2.fill")
+                                            .foregroundColor(.oarenaAccent)
+                                        Text("\(maxParticipants) participants")
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.oarenaPrimary)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.oarenaAccent.opacity(0.1))
+                                    .cornerRadius(8)
+                                    
+                                    Spacer()
+                                }
+                            }
+                        } else {
+                            // Duel explanation
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.oarenaAccent)
+                                    .font(.caption)
+                                
+                                Text("Duels are always 1v1 races between two participants")
+                                    .font(.caption)
+                                    .foregroundColor(.oarenaSecondary)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.oarenaAccent.opacity(0.05))
+                            .cornerRadius(8)
                         }
                     }
                 }
@@ -963,14 +1061,14 @@ struct CreateRaceView: View {
                             HStack {
                                 Image(systemName: "trophy.fill")
                                     .foregroundColor(.oarenaHighlight)
-                                Text("\(entryFee * maxParticipants) Tickets")
+                                Text("\(entryFee * (selectedMode == 0 ? 2 : maxParticipants)) Tickets")
                                     .font(.subheadline)
                                     .fontWeight(.bold)
                                     .foregroundColor(.oarenaAccent)
                                 
                                 Spacer()
                                 
-                                Text("(based on max participants)")
+                                Text(selectedMode == 0 ? "(based on 2 participants)" : "(based on max participants)")
                                     .font(.caption)
                                     .foregroundColor(.oarenaSecondary)
                                     .italic()
@@ -994,34 +1092,85 @@ struct CreateRaceView: View {
                                 .foregroundColor(.oarenaPrimary)
                         }
                         
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(selectedFormat == 0 ? "Race Start Time" : "Race Window Start")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.oarenaSecondary)
+                        if selectedFormat == 0 { // Live Race
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Live Race Start Time")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.oarenaSecondary)
+                                
+                                DatePicker("", selection: $startDate, displayedComponents: [.date, .hourAndMinute])
+                                    .labelsHidden()
+                                    .accentColor(.oarenaHighlight)
+                            }
                             
-                            DatePicker("", selection: $startDate, displayedComponents: [.date, .hourAndMinute])
-                                .labelsHidden()
-                                .accentColor(.oarenaAccent)
-                        }
-                        
-                        // Format explanation
-                        HStack {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundColor(.oarenaAccent)
-                                .font(.caption)
+                            // Live race explanation
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.oarenaHighlight)
+                                    .font(.caption)
+                                
+                                Text("Live races start at the exact scheduled time for all participants simultaneously. Start time must be at least 30 minutes in the future to allow participants to discover and join.")
+                                    .font(.caption)
+                                    .foregroundColor(.oarenaSecondary)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.oarenaHighlight.opacity(0.05))
+                            .cornerRadius(8)
                             
-                            Text(selectedFormat == 0 ? 
-                                 "Live races start at the exact scheduled time for all participants." : 
-                                 "Async races allow participants to complete within a time window.")
-                                .font(.caption)
-                                .foregroundColor(.oarenaSecondary)
-                                .multilineTextAlignment(.leading)
+                        } else { // Async Race
+                            VStack(alignment: .leading, spacing: 16) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Race Window Opening")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    Text("When participants can start submitting results")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                        .italic()
+                                    
+                                    DatePicker("", selection: $asyncOpeningTime, displayedComponents: [.date, .hourAndMinute])
+                                        .labelsHidden()
+                                        .accentColor(.oarenaAction)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Submission Deadline")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.oarenaSecondary)
+                                    
+                                    Text("Final deadline for result submissions")
+                                        .font(.caption)
+                                        .foregroundColor(.oarenaSecondary)
+                                        .italic()
+                                    
+                                    DatePicker("", selection: $asyncClosingTime, displayedComponents: [.date, .hourAndMinute])
+                                        .labelsHidden()
+                                        .accentColor(.oarenaAction)
+                                }
+                            }
+                            
+                            // Async race explanation
+                            HStack {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(.oarenaAction)
+                                    .font(.caption)
+                                
+                                Text("Participants can complete their workout anytime within the race window and submit their results before the deadline. Opening time must be at least 30 minutes in the future.")
+                                    .font(.caption)
+                                    .foregroundColor(.oarenaSecondary)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.oarenaAction.opacity(0.05))
+                            .cornerRadius(8)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.oarenaAccent.opacity(0.05))
-                        .cornerRadius(8)
                     }
                 }
                 .padding(.horizontal)
@@ -1029,7 +1178,7 @@ struct CreateRaceView: View {
                 // Create Race Button
                 CardView(backgroundColor: Color.clear) {
                     Button(action: {
-                        // Create race
+                        createRace()
                     }) {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
@@ -1050,8 +1199,8 @@ struct CreateRaceView: View {
                         .cornerRadius(12)
                         .shadow(color: Color.oarenaHighlight.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
-                    .disabled(raceName.isEmpty || !isWorkoutValid())
-                    .opacity(raceName.isEmpty || !isWorkoutValid() ? 0.6 : 1.0)
+                    .disabled(raceName.isEmpty || !isWorkoutValid() || !isTimingValid())
+                    .opacity(raceName.isEmpty || !isWorkoutValid() || !isTimingValid() ? 0.6 : 1.0)
                 }
                 .padding(.horizontal)
                 
@@ -1059,20 +1208,50 @@ struct CreateRaceView: View {
             }
             .padding(.top)
         }
+        .alert("Race Created Successfully!", isPresented: $showingSuccessAlert) {
+            Button("OK") {
+                resetForm()
+            }
+        } message: {
+            Text("Your race '\(createdRaceTitle)' has been scheduled and is now available for other users to join!")
+        }
     }
     
     private func isWorkoutValid() -> Bool {
         switch selectedWorkoutType {
         case 0: // Single Distance
-            return !distance.isEmpty
+            return !distance.isEmpty && (Int(distance) ?? 0) > 0
         case 1: // Single Time
-            return !timeMinutes.isEmpty
+            // Valid if either minutes or seconds is provided (or both)
+            let minutes = Int(timeMinutes) ?? 0
+            let seconds = Int(timeSeconds) ?? 0
+            return minutes > 0 || seconds > 0
         case 2: // Intervals: Distance
-            return !intervalDistance.isEmpty && !intervalCount.isEmpty
+            return !intervalDistance.isEmpty && !intervalCount.isEmpty && 
+                   (Int(intervalDistance) ?? 0) > 0 && (Int(intervalCount) ?? 0) > 0
         case 3: // Intervals: Time
-            return !intervalTimeMinutes.isEmpty && !intervalCount.isEmpty
+            // Valid if either minutes or seconds is provided for intervals AND interval count is provided
+            let intervalMins = Int(intervalTimeMinutes) ?? 0
+            let intervalSecs = Int(intervalTimeSeconds) ?? 0
+            let count = Int(intervalCount) ?? 0
+            return (intervalMins > 0 || intervalSecs > 0) && count > 0
         default:
             return false
+        }
+    }
+    
+    private func isTimingValid() -> Bool {
+        let now = Date()
+        let buffer = TimeInterval(30 * 60) // 30 minutes buffer for race scheduling
+        
+        if selectedFormat == 0 { // Live Race
+            // Start time should be at least 30 minutes in the future
+            return startDate > now.addingTimeInterval(buffer)
+        } else { // Async Race
+            // Opening time should be at least 30 minutes in the future
+            // Closing time should be after opening time (with buffer)
+            return asyncOpeningTime > now.addingTimeInterval(buffer) && 
+                   asyncClosingTime > asyncOpeningTime.addingTimeInterval(buffer)
         }
     }
     
@@ -1089,6 +1268,126 @@ struct CreateRaceView: View {
         default:
             return ""
         }
+    }
+    
+    private func createRace() {
+        // Build workout type string
+        let workoutTypeString = workoutTypes[selectedWorkoutType]
+        
+        // Build workout type with parameters
+        let detailedWorkoutType: String
+        switch selectedWorkoutType {
+        case 0: // Single Distance
+            detailedWorkoutType = "\(distance)m Row"
+        case 1: // Single Time
+            let totalMinutes = (Int(timeMinutes) ?? 0)
+            let totalSeconds = (Int(timeSeconds) ?? 0)
+            if totalMinutes > 0 {
+                detailedWorkoutType = "\(totalMinutes):\(String(format: "%02d", totalSeconds)) Time Trial"
+            } else {
+                detailedWorkoutType = "\(totalSeconds)s Time Trial"
+            }
+        case 2: // Intervals: Distance
+            detailedWorkoutType = "\(intervalCount)x\(intervalDistance)m Intervals"
+        case 3: // Intervals: Time
+            let intervalMins = (Int(intervalTimeMinutes) ?? 0)
+            let intervalSecs = (Int(intervalTimeSeconds) ?? 0)
+            detailedWorkoutType = "\(intervalCount)x\(intervalMins):\(String(format: "%02d", intervalSecs)) Intervals"
+        default:
+            detailedWorkoutType = workoutTypeString
+        }
+        
+        // Determine participant count
+        let participantCount = selectedMode == 0 ? 2 : maxParticipants
+        let prizePool = entryFee * participantCount
+        
+        // Determine race type and format
+        let raceType = selectedFormat == 0 ? "Live Race" : "Async Race"
+        let format = raceModes[selectedMode]
+        
+        // Build rank requirement
+        let rank: String? = rankRequirement == 0 ? nil : rankOptions[rankRequirement]
+        
+        // Build timing strings
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .short
+        
+        let timingDateTime: String
+        let deadlineDateTime: String
+        
+        if selectedFormat == 0 { // Live Race
+            timingDateTime = dateFormatter.string(from: startDate)
+            deadlineDateTime = "N/A"
+        } else { // Async Race
+            timingDateTime = dateFormatter.string(from: asyncOpeningTime)
+            deadlineDateTime = dateFormatter.string(from: asyncClosingTime)
+        }
+        
+        // Generate unique ID
+        let raceId = "user_created_\(UUID().uuidString)"
+        
+        // Get current user name (placeholder for now)
+        let creatorName = "You"  // In real app, this would be from user profile
+        
+        // Create the race with correct parameter order
+        let newRace = RaceData(
+            id: raceId,
+            title: raceName,
+            raceType: raceType,
+            format: format,
+            workoutType: detailedWorkoutType,
+            startTime: "Starts soon",
+            participants: "1 / \(participantCount) joined",
+            entryFee: entryFee,
+            prizePool: prizePool,
+            description: raceDescription.isEmpty ? "A custom race created by \(creatorName)" : raceDescription,
+            timeRemaining: "soon",
+            status: .upcoming,
+            isFeatured: false,
+            rankRequirement: rank,
+            createdBy: creatorName,
+            specificStartDateTime: timingDateTime,
+            specificDeadlineDateTime: deadlineDateTime
+        )
+        
+        // Add to global race list
+        RaceData.sampleAllRaces.append(newRace)
+        
+        // Track that user created this race
+        UserData.shared.addCreatedRace(raceId)
+        
+        // Automatically join the creator to their own race
+        UserData.shared.joinedRaces.append(newRace)
+        
+        // Show success alert
+        createdRaceTitle = raceName
+        showingSuccessAlert = true
+    }
+    
+    private func resetForm() {
+        raceName = ""
+        selectedMode = 0
+        selectedFormat = 0
+        maxParticipants = 8
+        selectedWorkoutType = 0
+        distance = ""
+        timeMinutes = ""
+        timeSeconds = ""
+        intervalDistance = ""
+        intervalTimeMinutes = ""
+        intervalTimeSeconds = ""
+        intervalRestMinutes = ""
+        intervalRestSeconds = ""
+        intervalCount = ""
+        entryFee = 25
+        startDate = Date()
+        asyncOpeningTime = Date()
+        asyncClosingTime = Date().addingTimeInterval(24 * 60 * 60) // 24 hours later
+        raceDescription = ""
+        rankRequirement = 0
+        showingSuccessAlert = false
+        createdRaceTitle = ""
     }
 }
 
@@ -1131,12 +1430,94 @@ struct WorkoutTypeRaceButton: View {
     }
 }
 
+struct RaceModeButton: View {
+    let title: String
+    let subtitle: String
+    let index: Int
+    let selectedIndex: Int
+    let action: () -> Void
+    
+    var isSelected: Bool {
+        index == selectedIndex
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .oarenaPrimary)
+                    .multilineTextAlignment(.center)
+                
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : .oarenaSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .padding(.horizontal, 8)
+            .background(isSelected ? Color.oarenaHighlight : Color(.systemGray6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.oarenaHighlight : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct RaceFormatButton: View {
+    let title: String
+    let subtitle: String
+    let index: Int
+    let selectedIndex: Int
+    let action: () -> Void
+    
+    var isSelected: Bool {
+        index == selectedIndex
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .oarenaPrimary)
+                    .multilineTextAlignment(.center)
+                
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : .oarenaSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .padding(.horizontal, 8)
+            .background(isSelected ? Color.oarenaAction : Color(.systemGray6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.oarenaAction : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 struct FeaturedRaceCard: View {
     let race: RaceData
     @ObservedObject private var userData = UserData.shared
     
+    private var userRaceStatus: RaceUserStatus {
+        userData.getUserRaceStatus(race.id)
+    }
+    
     private var hasJoined: Bool {
-        userData.hasJoinedRace(race.id)
+        userRaceStatus != .notJoined
     }
     
     var body: some View {
@@ -1157,7 +1538,16 @@ struct FeaturedRaceCard: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        if hasJoined {
+                        if userRaceStatus == .owner {
+                            Text("OWNER")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.oarenaHighlight)
+                                .cornerRadius(6)
+                        } else if userRaceStatus == .joined {
                             Text("JOINED")
                                 .font(.caption)
                                 .fontWeight(.bold)
@@ -1255,8 +1645,12 @@ struct RaceListCard: View {
     let race: RaceData
     @ObservedObject private var userData = UserData.shared
     
+    private var userRaceStatus: RaceUserStatus {
+        userData.getUserRaceStatus(race.id)
+    }
+    
     private var hasJoined: Bool {
-        userData.hasJoinedRace(race.id)
+        userRaceStatus != .notJoined
     }
     
     var body: some View {
@@ -1279,7 +1673,16 @@ struct RaceListCard: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 4) {
-                        if hasJoined {
+                        if userRaceStatus == .owner {
+                            Text("OWNER")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.oarenaHighlight)
+                                .cornerRadius(6)
+                        } else if userRaceStatus == .joined {
                             Text("JOINED")
                                 .font(.caption)
                                 .fontWeight(.bold)
@@ -1372,9 +1775,9 @@ struct RaceListCard: View {
                     
                     Spacer()
                     
-                    Text(hasJoined ? "Tap to view details" : "Tap to view details")
+                    Text("Tap to view details")
                         .font(.caption2)
-                        .foregroundColor(hasJoined ? .oarenaSecondary : .oarenaAccent)
+                        .foregroundColor(.oarenaAccent)
                         .italic()
                 }
             }

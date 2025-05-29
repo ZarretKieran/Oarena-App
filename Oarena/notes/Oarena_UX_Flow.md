@@ -30,6 +30,25 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 *   **Engagement:** Warm colors, sporty icons (SF Symbols, custom for brand), smooth SwiftUI animations, and extensive use of card-based UI for a "fun and sporty vibe." Exclusively native iOS SwiftUI elements.
 *   **Interconnectedness:** Ensure that there is always a button to get from one screen back to the previous screen (a user should never get "stuck" on a screen e.g. the race setup). Utilize a "back" button with a chevron icon in the top left of screens for this.
 
+### 1.3. Enhanced Navigation System (NEW v1.11):
+
+**TabSwitcher Class:**
+*   **Cross-Tab Navigation:** `TabSwitcher` class enables programmatic navigation between main tabs and specific sub-sections
+*   **Race Section Control:** `raceTabIndex` property tracks and controls specific Race tab sections (Featured: 0, All Races: 1, My Races: 2, Create: 3)
+*   **Enhanced Navigation Methods:**
+    *   `switchToTab(_:)` for general tab navigation
+    *   `switchToRaceTab(section:)` for precise Race tab section targeting
+
+**Navigation Integration:**
+*   **Home → My Races:** "View All" button in "Your upcoming races" card navigates directly to My Races section using `tabSwitcher.switchToRaceTab(section: 2)`
+*   **Quick Start Actions:** "Find a Race" button navigates to Race tab maintaining current section state
+*   **State Synchronization:** RaceHubView binds to `tabSwitcher.raceTabIndex` for consistent section selection across navigation
+
+**User Experience Benefits:**
+*   **Precision Navigation:** Users navigate directly to intended race management sections rather than default landing pages
+*   **Context Preservation:** Navigation maintains user's workflow context and intended actions
+*   **Seamless Flow:** Enhanced navigation reduces friction between related features and race management tasks
+
 ## 2. Detailed UX Flows per Section
 
 ---
@@ -120,7 +139,19 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   **Data Consistency:** Uses exact same race objects as Race tab to ensure identical details
     *   **UI:** `ScrollView` with `RacePreviewCard` components, enhanced timing displays, rank indicators, joined badges.
 
-4.  **Recent Workouts Card (Enhanced):**
+4.  **Your Upcoming Races Card (NEW v1.11):**
+    *   **Implementation:** Displays user's upcoming joined races with identical styling to Featured races card
+    *   **Conditional Display:** Only appears when user has upcoming joined races (`!userData.upcomingJoinedRaces.isEmpty`)
+    *   **Required Heading:** "Your upcoming races" header with identical typography to Featured races
+    *   **Navigation Integration:** "View All" button uses enhanced TabSwitcher for precise navigation to My Races section (`tabSwitcher.switchToRaceTab(section: 2)`)
+    *   **Data Source:** Uses `userData.upcomingJoinedRaces` with 5-race limit (`Array(userData.upcomingJoinedRaces.prefix(5))`)
+    *   **Horizontal Scroll Layout:** Identical to Featured races with `RacePreviewCard` components for visual consistency
+    *   **Strategic Placement:** Positioned after Featured races to promote user's committed races while maintaining discovery flow
+    *   **Enhanced TabSwitcher Integration:** Leverages new `switchToRaceTab(section:)` method for direct My Races navigation
+    *   **State Synchronization:** Real-time updates when user joins new races through any interface
+    *   **UI:** `ScrollView` with `RacePreviewCard` components, consistent styling, "View All" button with enhanced navigation
+
+5.  **Recent Workouts Card (Enhanced):**
     *   **Implementation:** Displays 4 most recent solo workouts as individual tappable cards.
     *   **Per Workout Card:** Workout type (e.g., "5000m Distance Row"), summary metrics (distance, time, avg pace), time ago, tickets earned, and rowing icon.
     *   **Tap Behavior:** Opens full `WorkoutSummaryView` (see 2.4) with detailed metrics and performance analysis.
@@ -128,7 +159,7 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   **UI:** `LazyVStack` of `WorkoutCard` components, each with icon, text summary, and ticket display.
     *   **Data Source:** `WorkoutData` model with sample workout data including various workout types.
 
-5.  **Featured Content/News Card (Optional):** App news, features, community highlights.
+6.  **Featured Content/News Card (Optional):** App news, features, community highlights.
     *   **UI:** Image, Text, Link.
 
 ---
@@ -154,6 +185,10 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
         *   **Single Time:** Time in minutes (`TextField`) 
         *   **Intervals Distance:** Distance, Rest time, Sets (`HStack` of `TextField`s)
         *   **Intervals Time:** Time, Rest time, Sets (`HStack` of `TextField`s)
+    *   **Keyboard Dismissal System (NEW v1.11):**
+        *   **Tap-Outside-to-Dismiss**: Background tap gestures for easy keyboard dismissal during parameter input
+        *   **Swipe-Down-to-Dismiss**: Downward swipe gesture with 50px threshold for intentional dismissal
+        *   **Smart Gesture Application**: Gestures active when parameter input fields are focused
     *   **Start Button:** "Start Rowing" (active if PM5 connected & parameters valid).
     *   **UI:** Individual button grid, `TextField`s with `RoundedBorderTextFieldStyle`, `Button`.
 
@@ -240,6 +275,11 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     *   Expanded search scope to include race titles, workout types, descriptions, AND race creators
     *   Real-time filtering with immediate results as user types for comprehensive race discovery
     *   Search bar with magnifying glass icon maintains existing UI while expanding functionality
+*   **Keyboard Dismissal System (NEW v1.11):**
+    *   **Tap-Outside-to-Dismiss**: Background tap gestures detect clicks outside text fields for easy keyboard dismissal
+    *   **Swipe-Down-to-Dismiss**: Downward swipe gesture recognition with 50px minimum threshold for intentional dismissal
+    *   **Universal hideKeyboard() Function**: Uses `UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder))` for consistent keyboard management
+    *   **Smart Gesture Logic**: Keyboard dismissal gestures only active when search bar is focused
 *   **Advanced Filter System (v1.9):** 
     *   Filter button with slider icon opens comprehensive `RaceFiltersView` sheet
     *   **Active Filter Indicator:** Red dot appears on filter button when any filters are applied
@@ -274,11 +314,16 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 *   **Section Picker:** `SegmentedPickerStyle` for "Upcoming" vs "In Progress"
 *   **Enhanced Race Display:** Shows rank requirements for joined races to remind users of progression
 *   **Conditional Display:** Different card lists based on selection with rank requirement information
+*   **Enhanced Navigation (NEW v1.11):** Direct navigation from Home tab "View All" button using enhanced TabSwitcher (`tabSwitcher.switchToRaceTab(section: 2)`)
 *   **UI:** `Picker` with segmented style, conditional `ScrollView` with enhanced `MyRaceCard` components
 
 **4. Create Race View (`CreateRaceView`):**
 *   **Form Structure:** Comprehensive race creation form in scrollable card
 *   **Fields:** Race Name (`TextField`), Mode (`Picker` - Duel/Regatta/Tournament), Format (`Picker` - Live/Async), Max Participants (`Stepper`), Workout Type (`Picker` - Distance/Time), Entry Fee (`Stepper`), Start Date (`DatePicker`), Description (`TextEditor`)
+*   **Keyboard Dismissal System (NEW v1.11):**
+    *   **Tap-Outside-to-Dismiss**: Background tap gestures for easy keyboard dismissal during form completion
+    *   **Swipe-Down-to-Dismiss**: Downward swipe gesture with 50px threshold for intentional keyboard dismissal
+    *   **Smart Gesture Application**: Gestures active when any text input field is focused for seamless form interaction
 *   **UI:** `ScrollView` with `CardView` containing form elements
 
 **Race Detail View (`RaceDetailView` - Modal):**
@@ -299,6 +344,13 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
     5. **Prize Structure:** 1st/2nd/3rd place breakdown with ticket amounts and total pool
     6. **Description:** Race details and rules
 *   **Join Functionality:** Entry fee display, join button with ticket validation, confirmation dialog
+*   **Standardized Join Button (NEW v1.11):**
+    *   **Unified Color Logic**: Consistent accent color gradient (green) for all eligible races, unified red gradient for all ineligible states
+    *   **Enhanced Visual Treatment**: LinearGradient backgrounds with color-matched shadows for depth and prominence
+    *   **Typography Enhancement**: Semibold font weight for improved readability and professional appearance
+    *   **Status-Based Icons**: `play.fill` for live races ("Join Race Now"), `person.badge.plus` for upcoming races ("Join Race")
+    *   **Opacity States**: Full opacity (1.0) for eligible buttons, 0.8 opacity for ineligible states with clear disabled indication
+    *   **Dynamic Text System**: "Join Race Now" for live races, specific error messages for ineligible states (rank requirements, insufficient tickets)
 *   **Race Card Consistency:** Identical race objects ensure same details across Home and Race tabs
 *   **UI:** `NavigationView` with `ScrollView`, multiple `CardView` sections, enhanced timing displays, rank indicators, eligibility warnings
 

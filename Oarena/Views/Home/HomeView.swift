@@ -189,11 +189,8 @@ struct HomeView: View {
                                     ForEach(previewRaces) { race in
                                         RacePreviewCard(race: race)
                                             .onTapGesture {
-                                                // Only allow tapping if user hasn't joined the race
-                                                if !userData.hasJoinedRace(race.id) {
-                                                    selectedRace = race
-                                                    showingRaceDetail = true
-                                                }
+                                                selectedRace = race
+                                                showingRaceDetail = true
                                             }
                                     }
                                 }
@@ -202,6 +199,42 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal)
+                    
+                    // Your Upcoming Races Section
+                    if !userData.upcomingJoinedRaces.isEmpty {
+                        CardView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Your upcoming races")
+                                        .font(.headline)
+                                        .foregroundColor(.oarenaPrimary)
+                                    
+                                    Spacer()
+                                    
+                                    Button("View All") {
+                                        // Navigate to My Races tab (upcoming section)
+                                        tabSwitcher.switchToRaceTab(section: 2)
+                                    }
+                                    .font(.caption)
+                                    .foregroundColor(.oarenaAccent)
+                                }
+                                
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 12) {
+                                        ForEach(Array(userData.upcomingJoinedRaces.prefix(5))) { race in
+                                            RacePreviewCard(race: race)
+                                                .onTapGesture {
+                                                    selectedRace = race
+                                                    showingRaceDetail = true
+                                                }
+                                        }
+                                    }
+                                    .padding(.horizontal, 4)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                     
                     // Recent Workouts Cards
                     CardView {
@@ -349,8 +382,12 @@ struct RacePreviewCard: View {
     let race: RaceData
     @ObservedObject private var userData = UserData.shared
     
+    private var userRaceStatus: RaceUserStatus {
+        userData.getUserRaceStatus(race.id)
+    }
+    
     private var hasJoined: Bool {
-        userData.hasJoinedRace(race.id)
+        userRaceStatus != .notJoined
     }
     
     var body: some View {
@@ -373,7 +410,16 @@ struct RacePreviewCard: View {
                     
                     Spacer()
                     
-                    if hasJoined {
+                    if userRaceStatus == .owner {
+                        Text("OWNER")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.oarenaHighlight)
+                            .cornerRadius(4)
+                    } else if userRaceStatus == .joined {
                         Text("JOINED")
                             .font(.caption2)
                             .fontWeight(.bold)

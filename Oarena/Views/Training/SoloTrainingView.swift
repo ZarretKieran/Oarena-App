@@ -435,6 +435,24 @@ struct SoloTrainingView: View {
                 )
             }
         }
+        .onTapGesture {
+            // Dismiss keyboard when tapping outside text fields
+            hideKeyboard()
+        }
+        .gesture(
+            DragGesture()
+                .onEnded { dragValue in
+                    // Dismiss keyboard when swiping down
+                    if dragValue.translation.height > 50 {
+                        hideKeyboard()
+                    }
+                }
+        )
+    }
+    
+    // Function to dismiss keyboard
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

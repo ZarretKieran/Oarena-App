@@ -228,7 +228,7 @@ struct RaceData: Identifiable, Codable {
         )
     ]
     
-    static let sampleAllRaces: [RaceData] = [
+    static var sampleAllRaces: [RaceData] = [
         // Featured races are included in all races
         sampleFeaturedRaces[0], // Elite 2k Championship
         sampleFeaturedRaces[1], // Weekend Warriors 5k  

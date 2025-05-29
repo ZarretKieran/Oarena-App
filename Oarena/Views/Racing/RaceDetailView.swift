@@ -45,18 +45,6 @@ struct RaceDetailView: View {
         }
     }
     
-    var joinButtonColor: Color {
-        if hasJoinedRace {
-            return Color.oarenaAccent.opacity(0.6)
-        } else if canJoinRace {
-            return Color.oarenaAccent
-        } else if !meetsRankRequirement {
-            return Color.red.opacity(0.7)
-        } else {
-            return Color.gray
-        }
-    }
-    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -378,14 +366,33 @@ struct RaceDetailView: View {
                                 Text(joinButtonText)
                             }
                             .font(.headline)
-                            .fontWeight(.medium)
+                            .fontWeight(.semibold)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(joinButtonColor)
+                            .background(
+                                canJoinRace ? 
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.oarenaAccent, Color.oarenaAccent.opacity(0.8)]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ) :
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.red.opacity(0.7), Color.red.opacity(0.5)]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .cornerRadius(12)
+                            .shadow(
+                                color: canJoinRace ? Color.oarenaAccent.opacity(0.3) : Color.red.opacity(0.2), 
+                                radius: canJoinRace ? 8 : 4, 
+                                x: 0, 
+                                y: 4
+                            )
                         }
                         .disabled(!canJoinRace)
+                        .opacity(canJoinRace ? 1.0 : 0.8)
                         .padding(.horizontal)
                     }
                     
