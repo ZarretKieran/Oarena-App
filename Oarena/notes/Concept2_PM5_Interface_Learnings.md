@@ -7,6 +7,11 @@
 
 ---
 
+## 1.5 Bluetooth Discovery Learnings (NEW)
+- Prefer scanning without service filters and then filtering by Local Name containing "PM5" or by advertised Concept2 service UUIDs (Control `CE060020-43E5-11E4-916C-0800200C9A66`, Rowing `CE060030-43E5-11E4-916C-0800200C9A66`). Some PM5s do not include services in initial advertisements.
+- Use `CBCentralManagerOptionShowPowerAlertKey: true` to help users enable Bluetooth if off.
+- Stop scanning when connecting to conserve battery and reduce noise.
+
 ## 2. Setting Up a Workout
 **Always use sequential commands with ~300ms delay between each. Omit `CSAFE_GOIDLE_CMD`, `CSAFE_RESET_CMD`, and `CSAFE_GOINUSE_CMD`.**
 

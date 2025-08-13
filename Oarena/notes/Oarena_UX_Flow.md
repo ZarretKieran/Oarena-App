@@ -87,19 +87,19 @@ A persistent **PM5 Connection Status Indicator** (a small, tappable card) will b
 **Goal:** Easy, reliable Concept2 PM5 connection.
 
 **Persistent Element:**
-*   The **PM5 Connection Status Indicator** (e.g., a card: green for connected, red for disconnected, yellow for attempting) appears at the top of "Train" and "Race" tabs.
+*   The **PM5 Connection Status Indicator** (card: green for connected, red for disconnected) appears at the top of "Train" and "Race" tabs and is tappable to open the PM5 device picker.
 *   Tapping opens an action sheet showing connection status, listing available PM5s, or allowing re-scan.
 
 **Flow:**
 
 1.  **Automatic Scan (Background):** App gently scans for known PM5s on start (if Bluetooth permitted).
 
-2.  **Manual Scan/Connect (`PM5ConnectionView`):**
-    *   **Trigger:** Via Profile > Settings, a prompt before Train/Race without connection, or tapping the status indicator.
-    *   **Screen:** Lists discovered PM5s (by PM5 ID, e.g., "PM5 XXXXXXXX"). "Scanning..." indicator. Button: "Refresh Scan."
-        *   **UI:** List rows with PM5 ID and "Connect" button. Ensure ample padding/spacing.
-    *   **Process:** Tap "Connect." App attempts connection (displays "Connecting...", "Authenticating...", "Connected!"). Status indicator updates.
-    *   **UI:** Indicator card color changes.
+2.  **Manual Scan/Connect (`PM5DevicePickerSheet`):**
+    *   **Trigger:** Tapping the status indicator in Train/Race tabs.
+    *   **Screen:** Card-based sheet with a prominent Scan/Stop button and a list of nearby PM5s.
+        *   **UI:** Card headers, Oarena accent backgrounds, device rows styled as compact cards.
+    *   **Process:** Tap Scan to start discovery, select a device to connect. Status updates and sheet dismisses.
+    *   **UI:** Status indicator card updates color and text accordingly.
     *   **Post-Connection:** Status indicator updates. User can proceed with Train/Race.
 
 3.  **Disconnection:** Via status indicator action sheet or `PM5ConnectionView`. Automatic if PM5 off/out of range. App updates indicator gracefully.

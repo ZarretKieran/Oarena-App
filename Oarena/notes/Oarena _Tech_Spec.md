@@ -132,7 +132,7 @@ This is a critical component within the mobile app, implemented in Swift.
 
 *   **Core Functionality (Implemented using CoreBluetooth):**
     *   `CBCentralManager` for managing BLE state, scanning (`scanForPeripherals(withServices:options:)`), and connecting.
-        *   Filter for PM5s using `CBAdvertisementDataLocalNameKey` ("PM5 XXXXXXXXX") or advertised service UUIDs.
+        *   Discovery approach: Scan without service filters and match devices by `CBAdvertisementDataLocalNameKey` containing "PM5" or by presence of Concept2 service UUIDs. This improves discovery reliability for PM5s that don't advertise services in scan responses.
     *   `CBPeripheral` for interacting with the connected PM5.
     *   `CBPeripheralDelegate` methods for service discovery (`discoverServices(_:)`, `peripheral(_:didDiscoverServices:)`), characteristic discovery (`discoverCharacteristics(_:for:)`, `peripheral(_:didDiscoverCharacteristicsFor:error:)`), and value updates (`peripheral(_:didUpdateValueFor:error:)`, `peripheral(_:didWriteValueFor:error:)`).
     *   Service and Characteristic discovery:
@@ -143,6 +143,7 @@ This is a critical component within the mobile app, implemented in Swift.
         *   **C2 PM Rowing Service (CBUUID string `CE060030-XXXX`):**
             *   Subscribe to relevant data characteristics (`0x0031` to `0x003A`, `0x003D`, etc.) using `setNotifyValue(true, for:)`.
             *   Use C2 rowing general status and additional status sample rate characteristic (`0x0034`) to set data update frequency.
+        *   Also discover standard Device Information Service (`180A`) for optional device metadata.
     *   CSAFE Frame Construction (Swift functions to generate `Data` objects):
         *   Implement logic from `CSAFE Spec.md` Section "Frame Structure".
         *   Standard Start Flag (`0xF1`), Stop Frame Flag (`0xF2`).

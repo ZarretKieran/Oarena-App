@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct RaceData: Identifiable, Codable {
     let id: String
@@ -60,24 +61,23 @@ struct RaceData: Identifiable, Codable {
         }
     }
     
-    var rankColor: String {
+    var rankColor: Color {
         guard let requirement = rankRequirement else {
-            return "oarenaAccent" // Use accent color for open races
+            return .oarenaAccent
         }
-        
         switch requirement {
         case "Bronze":
-            return "brown"
+            return .brown
         case "Silver":
-            return "gray"
+            return .gray
         case "Gold":
-            return "yellow"
+            return .yellow
         case "Plat":
-            return "cyan"
+            return .cyan
         case "Elite":
-            return "purple"
+            return .purple
         default:
-            return "oarenaSecondary"
+            return .oarenaSecondary
         }
     }
     

@@ -18,7 +18,8 @@ struct SoloTrainingView: View {
     @State private var intervalRestMinutes = ""
     @State private var intervalRestSeconds = ""
     @State private var intervalCount = ""
-    @State private var isPM5Connected = false
+    @ObservedObject private var pm5 = PM5BluetoothManager.shared
+    @State private var showPM5Picker = false
     @State private var showingWorkoutHistory = false
     @State private var showingTicketStore = false
     @State private var selectedWorkout: WorkoutData?
@@ -32,7 +33,7 @@ struct SoloTrainingView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // PM5 Connection Status
-                    PM5ConnectionStatusCard(isConnected: $isPM5Connected)
+                    PM5ConnectionStatusCard(isConnected: .constant(pm5.isConnected), onTap: { showPM5Picker = true })
                         .padding(.horizontal)
                     
                     // Setup Workout Card
@@ -314,16 +315,16 @@ struct SoloTrainingView: View {
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(isPM5Connected ? Color.oarenaAccent : Color.gray)
+                                    .background(pm5.isConnected ? Color.oarenaAccent : Color.gray)
                                 .cornerRadius(12)
                             }
-                            .disabled(!isPM5Connected)
+                            .disabled(!pm5.isConnected)
                         }
                     }
                     .padding(.horizontal)
                     
                     // PM5 Connection Prompt (if disconnected)
-                    if !isPM5Connected {
+                    if !pm5.isConnected {
                         CardView(backgroundColor: Color.oarenaHighlight.opacity(0.1)) {
                             VStack(spacing: 12) {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -412,6 +413,7 @@ struct SoloTrainingView: View {
                 }
             )
         }
+        .sheet(isPresented: $showPM5Picker) { PM5DevicePickerSheet() }
         .sheet(isPresented: $showingWorkoutHistory) {
             WorkoutHistoryView()
         }
@@ -458,12 +460,10 @@ struct SoloTrainingView: View {
 
 struct PM5ConnectionStatusCard: View {
     @Binding var isConnected: Bool
+    var onTap: (() -> Void)? = nil
     
     var body: some View {
-        Button(action: {
-            // Toggle connection for demo
-            isConnected.toggle()
-        }) {
+        Button(action: { onTap?() }) {
             HStack {
                 Circle()
                     .fill(isConnected ? Color.green : Color.red)
@@ -476,11 +476,9 @@ struct PM5ConnectionStatusCard: View {
                 
                 Spacer()
                 
-                if !isConnected {
-                    Text("Tap to Connect")
-                        .font(.caption)
-                        .foregroundColor(.oarenaSecondary)
-                }
+                Text("Tap to Connect")
+                    .font(.caption)
+                    .foregroundColor(.oarenaSecondary)
                 
                 Image(systemName: "chevron.right")
                     .font(.caption)

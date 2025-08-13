@@ -1,0 +1,1 @@
+* currently, my races has the option to submit a result for async workouts - this will eventually change to "start challenge" where the pm5 is involved.

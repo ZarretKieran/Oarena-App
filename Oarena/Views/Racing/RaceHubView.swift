@@ -10,7 +10,8 @@ import SwiftUI
 struct RaceHubView: View {
     @ObservedObject private var userData = UserData.shared
     @EnvironmentObject var tabSwitcher: TabSwitcher
-    @State private var isPM5Connected = false
+    @ObservedObject private var pm5 = PM5BluetoothManager.shared
+    @State private var showPM5Picker = false
     @State private var showingTicketStore = false
     @State private var rankRequirement = 0
     @State private var showingSuccessAlert = false
@@ -20,9 +21,9 @@ struct RaceHubView: View {
         NavigationView {
             VStack(spacing: 0) {
                 // PM5 Connection Status
-                PM5ConnectionStatusCard(isConnected: $isPM5Connected)
+                PM5ConnectionStatusCard(isConnected: .constant(pm5.isConnected), onTap: { showPM5Picker = true })
                     .padding(.horizontal)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 8)
                 
                 // Tab Selection
                 Picker("Race Section", selection: $tabSwitcher.raceTabIndex) {
@@ -77,6 +78,9 @@ struct RaceHubView: View {
         }
         .sheet(isPresented: $showingTicketStore) {
             TicketStoreView()
+        }
+        .sheet(isPresented: $showPM5Picker) {
+            PM5DevicePickerSheet()
         }
     }
 }
@@ -1562,7 +1566,7 @@ struct FeaturedRaceCard: View {
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(
-                                Color(race.rankColor)
+                                race.rankColor
                             )
                     }
                 }
@@ -1735,7 +1739,7 @@ struct RaceListCard: View {
                         Text(race.rankDisplayText)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(Color(race.rankColor))
+                            .foregroundColor(race.rankColor)
                         
                         Text(race.participants)
                             .font(.caption)
@@ -1856,7 +1860,7 @@ struct MyJoinedRaceCard: View {
                         Text(race.rankDisplayText)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(Color(race.rankColor))
+                            .foregroundColor(race.rankColor)
                         
                         Text(race.participants)
                             .font(.caption)

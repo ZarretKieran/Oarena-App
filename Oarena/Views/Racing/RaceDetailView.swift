@@ -246,12 +246,12 @@ struct RaceDetailView: View {
                                         .foregroundColor(.oarenaSecondary)
                                     
                                     VStack(spacing: 6) {
-                                        Text(race.rankDisplayText)
-                                            .font(.headline)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(
-                                                Color(race.rankColor)
-                                            )
+                                            Text(race.rankDisplayText)
+                                                .font(.headline)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(
+                                                    race.rankColor
+                                                )
                                         
                                         if let requirement = race.rankRequirement {
                                             Text("Minimum: \(requirement) Rank")

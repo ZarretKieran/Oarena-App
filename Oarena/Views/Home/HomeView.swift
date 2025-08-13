@@ -460,7 +460,7 @@ struct RacePreviewCard: View {
                         Text(race.rankDisplayText)
                             .font(.caption2)
                             .fontWeight(.medium)
-                            .foregroundColor(Color(race.rankColor))
+                            .foregroundColor(race.rankColor)
                         
                         Text(race.participants)
                             .font(.caption2)

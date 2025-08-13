@@ -10,7 +10,7 @@ import SwiftUI
 struct TicketStoreView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedCategory = 0
-    @State private var currentTickets = 150
+    @ObservedObject private var userData = UserData.shared
     
     let categories = ["Ticket Packs", "Premium", "Bundles"]
     
@@ -34,7 +34,7 @@ struct TicketStoreView: View {
                             }
                             
                             HStack {
-                                Text("\(currentTickets)")
+                                Text("\(userData.ticketCount)")
                                     .font(.largeTitle)
                                     .fontWeight(.bold)
                                     .foregroundColor(.oarenaAction)

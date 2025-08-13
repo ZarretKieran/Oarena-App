@@ -588,6 +588,114 @@ This comprehensive redesign transforms both the Create Race and Filter interface
 
 This comprehensive update resolves critical compilation issues while significantly enhancing user experience through improved keyboard handling, strategic race promotion, precise navigation control, and consistent visual design language throughout the racing system.
 
+## ✅ **Version 1.12 - Enhanced Rankings Tab with Vertical Timeline System (COMPLETED)**
+
+### **Redesigned Rank Tiers Display**
+**Implementation**: Complete visual redesign of the main rank display for improved focus and user experience
+- **Simplified Main Display**: Transformed horizontal rank tiers display to show only user's current rank and division
+- **Enhanced Visual Prominence**: Larger, more prominent current rank circle (80px) with highlight ring indicator
+- **Current Rank Focus**: Clear display of rank name, division, and division progress in single focused card
+- **Interactive Design**: Made entire card tappable with "Tap to view rank progression" instruction
+- **Streamlined UX**: Removed visual clutter while maintaining essential rank information visibility
+
+### **Comprehensive Vertical Timeline System (NEW)**
+**Implementation**: Revolutionary rank progression visualization showing complete 37-tier journey
+- **Complete Rank Journey**: Vertical timeline displaying all progression tiers from Iron VI through Elite
+- **Visual Progression States**: Three distinct visual states for past (achieved), current, and future ranks
+- **Timeline Connectivity**: Connected visual elements with lines showing rank progression flow
+- **Auto-Scroll to Current**: Intelligent auto-scroll that centers user's current rank position on load
+- **ScrollViewReader Integration**: Smooth animated scrolling to user's current position with 0.8-second easing
+- **Tier Numbering**: Clear progression indicators showing tier numbers (#1-#37) for complete journey tracking
+
+### **Interactive Athlete Class Selection (NEW)**
+**Implementation**: Dynamic athlete class selection replacing static display for enhanced user control
+- **Dropdown Menu Interface**: Replaced static "Viewing for: [Class]" badge with interactive Menu component
+- **Four Athlete Classes**: Complete selection between OWM, OWW, LWM, LWW with full names displayed
+- **Real-time Updates**: Timeline and time requirements automatically update when athlete class changes
+- **Enhanced UX**: Clear chevron indicator and accent color styling for intuitive interaction
+- **Simplified Information Architecture**: Eliminated redundant "Athlete Classes" section lower in explanation view
+- **Streamlined Interface**: Removed redundant "Time Standards" and "Rank Structure" sections since timeline displays all information directly
+
+### **Complete Time Requirements Integration (NEW)**
+**Implementation**: Comprehensive time standards display directly in the timeline for immediate reference
+- **All 37 Tier Times**: Complete time requirements for every rank and division across all athlete classes
+- **Accurate Data Source**: Time requirements directly match the detailed specifications in Ranked_System.md
+- **Athlete Class Specific**: Times automatically adjust based on selected athlete class (OWM/OWW/LWM/LWW adjustments)
+- **Timeline Integration**: 2k and 5k times displayed directly on each tier in the vertical timeline
+- **Visual Hierarchy**: Time requirements styled with proper color coding based on achievement status
+
+### **Advanced Timeline Visual Design**
+**Implementation**: Beautiful, professional timeline interface with comprehensive rank state visualization
+
+**Timeline Visual Elements:**
+- **Connection Lines**: Vertical lines connecting all ranks, colored based on achievement status (accent for achieved, muted for future)
+- **Rank Badges**: Circular rank indicators with proper tier colors and SF Symbol icons
+- **Size Differentiation**: Current rank displayed larger (50px) than others (40px) for prominence
+- **Current Rank Highlighting**: Special highlight ring around current position for immediate identification
+- **Achievement Status**: Visual indicators showing "Current Rank" and "Achieved" status with appropriate icons
+
+**Enhanced Information Cards for Each Tier:**
+- **Rank and Division Display**: Clear rank name and division information with proper typography hierarchy
+- **Time Requirements Display**: 2k and 5k time requirements prominently displayed for each tier
+- **Status Indicators**: "Current Rank" with location icon, "Achieved" with checkmark for past ranks
+- **Visual Feedback**: Background colors and borders distinguishing current rank from others
+- **Tier Number Tags**: Small badges showing progression position (#1-#37) for context
+- **Responsive Design**: Adaptive layout with proper spacing and enhanced visual hierarchy for time display
+
+### **Technical Implementation Excellence**
+**Implementation**: Robust data handling and state management for comprehensive rank system
+
+**Complete Time Standards Database:**
+- **All Athlete Classes**: Complete time tables for OWM, OWW (+45s 2k, +2:15 5k), LWM (+15s 2k, +45s 5k), LWW (+60s 2k, +3min 5k)
+- **All 37 Tiers**: Precise time requirements for every rank and division combination
+- **Accurate Specifications**: Times exactly match the detailed breakdown in Ranked_System.md documentation
+- **Efficient Lookup**: Modular functions for each athlete class with proper division-based time calculation
+
+**Enhanced State Management:**
+- **Dynamic Class Selection**: @State management for selectedAthleteClass with real-time timeline updates
+- **Time Requirement Integration**: Enhanced tier tuple structure including 2k and 5k times for each rank
+- **Interactive Updates**: Timeline automatically recalculates and redisplays when athlete class selection changes
+- **Preserved Navigation**: Maintains auto-scroll and positioning functionality when switching athlete classes
+
+### **Enhanced User Experience Features**
+**Implementation**: Intelligent interaction design promoting rank progression understanding
+
+**Smart Auto-Scroll Behavior:**
+- **Delayed Animation**: 0.5-second delay before auto-scroll for smooth load experience
+- **Center Anchor**: Positions user's current rank in center of timeline view for optimal visibility
+- **Smooth Animation**: EaseInOut animation curve for professional, polished feel
+- **ScrollView Integration**: Proper ScrollViewReader implementation for precise positioning control
+
+**Progressive Visual States:**
+- **Past Ranks**: Muted but still visible with "Achieved" indicators and accent coloring
+- **Current Rank**: Maximum prominence with highlight colors, special ring, and clear status
+- **Future Ranks**: Subdued appearance showing aspirational progression path with visible time targets
+- **Elite Distinction**: Special handling for Elite rank (no divisions) at pinnacle of progression
+
+**Time Requirement Accessibility:**
+- **Immediate Reference**: Users can see exact time requirements for any rank without navigating away
+- **Class Comparison**: Easy switching between athlete classes to compare time standards
+- **Goal Setting**: Clear visibility of next rank requirements promotes training focus
+- **Achievement Context**: Past achievements highlighted with current and future targets clearly defined
+
+### **Integration with Existing Systems**
+**Implementation**: Seamless integration maintaining all existing Rankings tab functionality
+- **Preserved Info System**: Complete retention of existing ranking explanation, DP system, and core principles
+- **Enhanced Navigation**: Improved flow from simplified main display to comprehensive timeline view
+- **Consistent Design Language**: Timeline design matches existing card-based UI and color scheme
+- **UserData Compatibility**: Full integration with existing rank progression and user state management
+- **Streamlined Interface**: Removed redundant sections while enhancing information density and usability
+
+### **User Experience Achievements**
+- **Comprehensive Reference**: Users have immediate access to all rank requirements without external documentation
+- **Interactive Discovery**: Dynamic athlete class selection promotes exploration and comparison
+- **Goal Clarity**: Exact time targets visible for every progression tier eliminates uncertainty
+- **Motivational Design**: Complete journey visualization with achievement recognition promotes continued training
+- **Efficient Interface**: Streamlined design reduces cognitive load while maximizing information accessibility
+- **Professional Polish**: Interactive elements and smooth animations create premium app experience
+
+This comprehensive enhancement transforms the Rankings tab into a complete rank progression reference system. Users can instantly access any rank requirement, compare athlete classes, and visualize their complete journey with precise time targets. The interactive timeline becomes both a motivational tool and practical training reference, significantly enhancing the value and usability of the ranking system.
+
 ## 🚧 NEXT PHASE - Backend Integration & Functionality
 
 ### Authentication System
@@ -598,11 +706,11 @@ This comprehensive update resolves critical compilation issues while significant
 - [ ] User session management
 
 ### PM5 Bluetooth Integration
-- [ ] Core Bluetooth framework integration
-- [ ] PM5 device discovery and pairing
+- [x] Core Bluetooth framework integration
+- [x] PM5 device discovery and connection UI (Train/Race tabs)
+- [x] Connection state management (status card + shared manager)
 - [ ] CSAFE command implementation
 - [ ] Real-time workout data streaming
-- [ ] Connection state management
 - [ ] Error handling and reconnection logic
 
 ### Data Models & Storage
